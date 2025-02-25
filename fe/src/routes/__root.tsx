@@ -1,11 +1,13 @@
-import * as React from 'react'
-import { Outlet, createRootRoute } from '@tanstack/react-router'
+import { Toaster } from '@medusajs/ui';
+import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { Suspense } from 'react';
 
 export const Route = createRootRoute({
   component: () => (
-    <React.Fragment>
-      <div>Hello "__root"!</div>
+    <>
+      <Toaster position="top-center" className="mt-7" />
       <Outlet />
-    </React.Fragment>
+      <Suspense></Suspense>
+    </>
   ),
-})
+});
