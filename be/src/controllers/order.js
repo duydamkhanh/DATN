@@ -73,7 +73,7 @@ const createOrder = async (req, res) => {
       const email = user.email;
 
 
-      Mail.sendOrderConfirmation(email, order);
+      // Mail.sendOrderConfirmation(email, order);
 
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode });

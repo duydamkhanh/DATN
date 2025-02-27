@@ -8,7 +8,7 @@ const {
   getCategoryBySlug,
   getRootCategory,
   getCategoryShow,
-} = require("../../controllers/category");
+} = require("../controllers/category");
 
 const router = express.Router();
 router.get(`/categories`, getCategorys);

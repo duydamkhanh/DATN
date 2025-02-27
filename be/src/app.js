@@ -7,19 +7,13 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 
 // Import routes
-const message = require("./routers/chatRoutes");
+
 const cartRouter = require("./routers/cart");
 const productRouter = require("./routers/product");
 const categoryRouter = require("./routers/category");
 const authRouter = require("./routers/auth.router");
 const orderRouter = require("./routers/order");
-const shippingRoutes = require("./routers/shipping");
 const couponRoutes = require("./routers/coupon");
-const commentRouter = require("./routers/comment");
-const paymentRoutes = require("./routers/paymentRoutes");
-const blogRoutes = require("./routers/blog");
-const customerRoutes = require("./routers/customerRoutes");
-const locationRoutes = require("./routers/address");
 
 // Database connection
 const { connectDB } = require("./config/db");
@@ -70,14 +64,6 @@ app.use("/api", authRouter);
 app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
 app.use("/api", orderRouter);
-app.use("/api", shippingRoutes);
-app.use("/api", couponRoutes);
-app.use("/api", commentRouter);
-app.use("/api", paymentRoutes);
-app.use("/api", message);
-app.use("/api", blogRoutes);
-app.use("/api", customerRoutes);
-app.use("/api", locationRoutes);
 
 // Start servers
 const appPort = 8000;
