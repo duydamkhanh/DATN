@@ -160,12 +160,12 @@ const Header = () => {
         <div className="container mt-[-10px] px-[55px] ">
           <div className="header-desk header-desk_type_1 ">
             <div className="logo">
-              <a href="/">
-                <img
-                  src="/fasion zone.png"
+              <a href="/">BAYA
+                {/* <img
+                  src=""
                   alt="Uomo"
                   className="logo__image d-block w-40"
-                />
+                /> */}
               </a>
             </div>
             {/* /.logo */}

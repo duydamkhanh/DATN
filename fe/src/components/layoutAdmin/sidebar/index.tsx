@@ -41,51 +41,51 @@ const menuOders: MenuItem[] = [
     href: '/dashboard/order',
   },
 ];
-const menuCoupon: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Danh sách mã giảm giá',
-    icon: <ReceiptPercent />,
-    href: '/dashboard/coupon',
-  },
-];
-const menuBlog: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Danh sách bài viết',
-    icon: <Pencil />,
-    href: '/dashboard/blog',
-  },
-];
-const menuRevenue: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Doanh thu',
-    icon: <CurrencyDollar />,
-    href: '/dashboard/revenue',
-  },
-];
-const menuMessenger: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Trò chuyện',
-    icon: <ChatBubble />,
-    href: '/dashboard/messenger',
-  },
-];
-const menuAddress: MenuItem[] = [
-  {
-    id: 1,
-    name: 'Vị trí cửa hàng',
-    icon: <MapPin />,
-    href: '/dashboard/address',
-  },
-];
+// const menuCoupon: MenuItem[] = [
+//   {
+//     id: 1,
+//     name: 'Danh sách mã giảm giá',
+//     icon: <ReceiptPercent />,
+//     href: '/dashboard/coupon',
+//   },
+// ];
+// const menuBlog: MenuItem[] = [
+//   {
+//     id: 1,
+//     name: 'Danh sách bài viết',
+//     icon: <Pencil />,
+//     href: '/dashboard/blog',
+//   },
+// ];
+// const menuRevenue: MenuItem[] = [
+//   {
+//     id: 1,
+//     name: 'Doanh thu',
+//     icon: <CurrencyDollar />,
+//     href: '/dashboard/revenue',
+//   },
+// ];
+// const menuMessenger: MenuItem[] = [
+//   {
+//     id: 1,
+//     name: 'Trò chuyện',
+//     icon: <ChatBubble />,
+//     href: '/dashboard/messenger',
+//   },
+// ];
+// const menuAddress: MenuItem[] = [
+//   {
+//     id: 1,
+//     name: 'Vị trí cửa hàng',
+//     icon: <MapPin />,
+//     href: '/dashboard/address',
+//   },
+// ];
 
 const Sidebar = () => {
   return (
     <aside className="border-cool-gray-20 relative h-screen max-h-screen min-w-fit space-y-4 overflow-y-scroll border-r bg-ui-bg-base px-4 py-6">
-      <img src="/fasion zone.png" alt="logo" width={150} height={53} />
+      {/* <img src="" alt="logo" width={150} height={53} /> */} BAYA
       <nav className="space-y-4">
         <ul>
           {menuItems.map(item => (
@@ -130,7 +130,7 @@ const Sidebar = () => {
             ))}
           </div>
         </section>
-        <section className="space-y-1">
+        {/* <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Mã giảm giá
           </header>
@@ -209,7 +209,7 @@ const Sidebar = () => {
               />
             ))}
           </div>
-        </section>
+        </section> */}
       </nav>
     </aside>
   );
