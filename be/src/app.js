@@ -14,6 +14,7 @@ const categoryRouter = require("./routers/category");
 const authRouter = require("./routers/auth.router");
 const orderRouter = require("./routers/order");
 const couponRoutes = require("./routers/coupon");
+const commentRouter = require("./routers/comment");
 
 // Database connection
 const { connectDB } = require("./config/db");
@@ -64,6 +65,7 @@ app.use("/api", authRouter);
 app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
 app.use("/api", orderRouter);
+app.use("/api", commentRouter);
 
 // Start servers
 const appPort = 8000;
