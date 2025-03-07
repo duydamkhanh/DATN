@@ -6,6 +6,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 
+
 // Import routes
 
 const cartRouter = require("./routers/cart");
@@ -15,7 +16,7 @@ const authRouter = require("./routers/auth.router");
 const orderRouter = require("./routers/order");
 const couponRoutes = require("./routers/coupon");
 const commentRouter = require("./routers/comment");
-
+const shippingRoutes = require("./routers/shipping");
 // Database connection
 const { connectDB } = require("./config/db");
 
@@ -24,6 +25,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
+
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -66,6 +68,7 @@ app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
 app.use("/api", orderRouter);
 app.use("/api", commentRouter);
+app.use("/api", shippingRoutes);
 
 // Start servers
 const appPort = 8000;
