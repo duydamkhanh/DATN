@@ -5,11 +5,7 @@ import FeaturedProducts from '@/components/featuredProducts';
 import useCommentMutation from '@/data/Comment/useCommentMutation';
 import { useFetchCategory } from '@/data/products/useProductList';
 import { useSocket } from '@/data/socket/useSocket';
-import {
-  EllipsisHorizontal,
-  StarSolid,
-  Trash,
-} from '@medusajs/icons';
+import { EllipsisHorizontal, StarSolid, Trash } from '@medusajs/icons';
 import { DropdownMenu, IconButton, toast } from '@medusajs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useParams } from '@tanstack/react-router';
@@ -85,7 +81,7 @@ function DetailProduct() {
           );
           const average = totalRating / response.data.length;
           setAverageRating(average); // Cập nhật số sao trung bình
-        } catch (err) { }
+        } catch (err) {}
       };
       fetchComments();
     }
@@ -107,35 +103,6 @@ function DetailProduct() {
       }
     }
   }, [product]); // Trigger when product data is available
-  // console.log(localStorage.getItem('userId'));
-  const handleCommentSubmit = async () => {
-    if (!newComment.trim()) {
-      toast.error('Vui lòng nhập bình luận.');
-      return;
-    }
-
-    if (rating === 0) {
-      toast.error('Vui lòng chọn đánh giá sao.');
-      return;
-    }
-
-    try {
-      console.log('Product ID being sent:', product._id);
-      // Call createComment mutation with rating
-      createComment.mutate({
-        productId: product._id,
-        content: newComment,
-        userId: localStorage.getItem('userId') || '', // Ensure userId is available
-        rating: rating, // Pass the rating value
-      });
-
-      // Reset input and rating
-      setNewComment('');
-      setRating(0);
-    } catch (err) {
-      toast.error('Không thể gửi bình luận. Vui lòng thử lại.');
-    }
-  };
 
   // Mutation to add item to cart
   const addItemToCart = useMutation({
@@ -167,13 +134,23 @@ function DetailProduct() {
     setSelectedSize(size); // Cập nhật kích cỡ được chọn
     setSelectedColor(''); // Reset màu khi thay đổi kích cỡ
 
-    // Lọc danh sách màu sắc có sẵn dựa trên kích cỡ đã chọn
+    if (!product || !product.variants) return;
+
     const availableColors = product.variants
       .filter(variant => variant.size === size)
       .map(variant => variant.color);
 
     setAvailableColors([...new Set(availableColors)]); // Loại bỏ trùng lặp
   };
+
+  if (
+    product &&
+    product.variants &&
+    product.variants.length > 0 &&
+    !selectedSize
+  ) {
+    handleSizeChange(product.variants[0].size);
+  }
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
@@ -251,6 +228,8 @@ function DetailProduct() {
       toast.error('Không thể gửi yêu cầu, vui lòng thử lại.');
     }
   };
+
+  const category = categories?.find(cat => cat._id === product.category);
 
   return (
     <div>
@@ -377,10 +356,11 @@ function DetailProduct() {
                           <button
                             type="button"
                             onClick={() => handleSizeChange(size)}
-                            className={`rounded border px-4 py-2 ${selectedSize === size
-                              ? 'border-blue-500 bg-blue-500 text-white'
-                              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
-                              }`}
+                            className={`rounded border px-4 py-2 ${
+                              selectedSize === size
+                                ? 'border-blue-500 bg-blue-500 text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                            }`}
                           >
                             {size}
                           </button>
@@ -407,10 +387,11 @@ function DetailProduct() {
                               type="button"
                               key={color}
                               onClick={() => setSelectedColor(color)}
-                              className={`h-8 w-8 rounded-full border focus:outline-none ${selectedColor === color
-                                ? 'border-blue-500 ring-2 ring-blue-500'
-                                : 'border-gray-300'
-                                }`}
+                              className={`h-8 w-8 rounded-full border focus:outline-none ${
+                                selectedColor === color
+                                  ? 'border-blue-500 ring-2 ring-blue-500'
+                                  : 'border-gray-300'
+                              }`}
                               style={{
                                 backgroundColor: color,
                                 boxShadow:
@@ -482,7 +463,7 @@ function DetailProduct() {
                     >
                       <use href="#icon_heart" />
                     </svg>
-                    <span className='mt-2'>Danh sách yêu thích</span>
+                    <span className="mt-2">Danh sách yêu thích</span>
                   </a>
                   <share-button className="share-button">
                     <button className="menu-link menu-link_us-s to-share d-flex align-items-center border-0 bg-transparent">
@@ -554,11 +535,11 @@ function DetailProduct() {
                   </div>
                   <div className="meta-item flex items-center gap-2">
                     <label>Danh mục:</label>
-                    <div className='flex gap-2'>
-                      {categories?.map(
+                    <div className="flex gap-2">
+                      {/* {categories?.map(
                         (category: { _id: string; name: string }) => (
                           <div
-                            key={category._id}
+                            key={category._id}  
                             onClick={e => {
                               e.preventDefault();
                               setSelectedCategory(category._id); // Gọi hàm để cập nhật danh mục
@@ -570,7 +551,8 @@ function DetailProduct() {
                             </a>
                           </div>
                         )
-                      )}
+                      )} */}
+                      {category?.name || 'Không có danh mục'}
                     </div>
                   </div>
                 </div>
@@ -655,11 +637,15 @@ function DetailProduct() {
                         <span className="p-2">{size}</span>
                       ))}
                     </div>
-                    <div className="item">
+                    <div className="item flex gap-2">
                       <label className="h6">Màu</label>
-                      {availableColors &&
-                        availableColors.map((color, index) => <div></div>)}
-                      <span>Black, Orange, White</span>
+                      {[
+                        ...new Set(
+                          product.variants.map(variant => variant.color)
+                        ),
+                      ].map((color, index) => (
+                        <div key={index}>{color}</div>
+                      ))}
                     </div>
                   </div>
                 </div>
