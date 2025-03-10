@@ -12,11 +12,11 @@ const Footer = () => {
             <div className="footer-column footer-store-info col-12 mb-lg-0 mb-4">
               <div className="logo">
                 <a href="index.html">
-                  <img
+                  {/* <img
                     src="/fasion zone.png"
                     alt="Uomo"
                     className="logo__image d-block w-48"
-                  />
+                  /> */} baya
                 </a>
               </div>
               {/* /.logo */}
