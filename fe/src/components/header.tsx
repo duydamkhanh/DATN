@@ -2,7 +2,14 @@ import { useCart } from '@/data/cart/useCartLogic';
 import { useFetchCart } from '@/data/cart/useFetchCart';
 import { toast } from '@medusajs/ui';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { ChangeEvent, KeyboardEvent, KeyboardEventHandler, useEffect, useRef, useState } from 'react';
+import {
+  ChangeEvent,
+  KeyboardEvent,
+  KeyboardEventHandler,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import '../../css/plugins/swiper.min.css';
 import imgCart from '../assets/images/cart_trong.jpg';
 import nav_bg from '../assets/images/nav-bg.jpg';
@@ -42,30 +49,29 @@ const Header = () => {
       navigate({
         to: '/searchList',
         search: {
-          search: e.target.value
-        }
-      })
+          search: e.target.value,
+        },
+      });
     }
-  }
+  };
 
   const toggleSearch = () => {
-    setIsSearchOpen(!isSearchOpen); // Đổi trạng thái khi nhấn icon search
+    setIsSearchOpen(!isSearchOpen);
   };
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
   const userId = localStorage.getItem('userId');
-  const { data: cartData, isLoading } = useFetchCart(userId); // Lấy dữ liệu giỏ hàng
-  // Tính tổng số lượng sản phẩm trong giỏ hàng
+  const { data: cartData, isLoading } = useFetchCart(userId);
   const totalItems =
-    cartData?.products?.reduce(
-      (total: any, product: any) => total + product.quantity,
-      0
-    ) || 0;
+    new Set(
+      cartData?.products?.map(
+        (product: any) => `${product.productId}-${product.variantId}`
+      )
+    ).size || 0;
 
   // Hàm đăng xuất
   const handleLogout = () => {
-    // Xóa token khỏi localStorage và đặt trạng thái đăng nhập về false
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userId');
@@ -78,7 +84,7 @@ const Header = () => {
   //Phần menu của user
   const menuRef = useRef(null);
   useEffect(() => {
-    const handleClickOutside = event => {
+    const handleClickOutside = (event: React.ChangeEvent<HTMLInputElement>) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
@@ -157,16 +163,17 @@ const Header = () => {
         className={`${isSticky ? 'bg-white' : 'bg-white'} header_sticky fixed left-0 top-0 w-full transition-all duration-300`}
       >
         <Banertime />
-        <div className="container mt-[-10px] px-[55px] ">
-          <div className="header-desk header-desk_type_1 ">
+        <div className="container mt-[-10px] px-[55px]">
+          <div className="header-desk header-desk_type_1">
             <div className="logo">
-              <a href="/">BAYA
-                {/* <img
-                  src=""
+              {/* <a href="/">
+                <img
+                  src="/fasion zone.png"
                   alt="Uomo"
                   className="logo__image d-block w-40"
-                /> */}
-              </a>
+                />
+              </a> */}
+              <h1 className="text-xl font-semibold">baya</h1>
             </div>
             {/* /.logo */}
             <nav className="navigation">
@@ -218,11 +225,11 @@ const Header = () => {
                   </div>
                 ) : (
                   <i
-                    className="fa-solid fa-magnifying-glass text-xl cursor-pointer"
+                    className="fa-solid fa-magnifying-glass cursor-pointer text-xl"
                     onClick={() => {
                       toggleShowSearch();
 
-                      setTimeout(() => inputRef.current?.focus(), 1)
+                      setTimeout(() => inputRef.current?.focus(), 1);
                     }}
                   ></i>
                 )}
@@ -385,7 +392,7 @@ const Header = () => {
                           <Link to="/profile">Cập nhật hồ sơ</Link>
                         </li>
 
-                        <li className="px-4 py-2 text-lg font-medium hover:bg-blue-100 hover:text-blue-500">
+                        <li className="js-close-aside px-4 py-2 text-lg font-medium hover:bg-blue-100 hover:text-blue-500">
                           <Link to="/orderuser">Đơn mua</Link>
                         </li>
 
@@ -422,10 +429,7 @@ const Header = () => {
             </div>
           </div>
         </div>
-        <div
-          className="aside aside_right cart-drawer overflow-hidden"
-          id="cartDrawer"
-        >
+        <div className="aside aside_right cart-drawer" id="cartDrawer">
           <div className="aside-header d-flex align-items-center">
             {!isLoading && totalItems > 0 ? (
               <h3 className="text-uppercase fs-6 mb-0">
@@ -450,7 +454,7 @@ const Header = () => {
                 </p>
                 <Link
                   to="/shop"
-                  className="btn btn-primary d-block m-auto mt-3 w-52"
+                  className="btn btn-primary d-block js-close-aside m-auto mt-3 w-52"
                 >
                   Mua sắm ngay
                 </Link>
@@ -465,7 +469,7 @@ const Header = () => {
                     <a href="product1_simple.html">
                       <img
                         loading="lazy"
-                        className="cart-drawer-item__img"
+                        className="cart-drawer-item__img h-24 w-24"
                         src={product.image}
                       />
                     </a>
@@ -520,7 +524,6 @@ const Header = () => {
                     onClick={() => handleDeleteByIdProduct(product.variantId)} // Truyền variantId của sản phẩm
                     className="btn-close-xs position-absolute js-cart-item-remove end-0 top-0 py-2"
                   />
-
                 </div>
               ))
             )}
@@ -544,12 +547,15 @@ const Header = () => {
               </span>
             </div>
             {/* /.d-flex justify-content-between */}
-            <Link to="/cart" className="btn btn-light d-block mt-3">
+            <Link
+              to="/cart"
+              className="btn btn-light d-block js-close-aside mt-3"
+            >
               Xem giỏ hàng
             </Link>
             <button
               onClick={handleCheckout}
-              className="btn btn-primary d-block mt-3 w-full"
+              className="btn btn-primary d-block js-close-aside mt-3 w-full"
               disabled={cartData?.products?.length === 0}
             >
               Thanh Toán
@@ -557,7 +563,6 @@ const Header = () => {
           </div>
           {/* /.aside-content */}
         </div>
-
         {/* /.aside */}
         {/* Sitemap */}
         <div className="modal fade" id="siteMap" tabIndex={-1}>
