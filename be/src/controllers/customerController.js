@@ -61,33 +61,37 @@ const createCustomer = async (req, res) => {
 };
 
 
-  const getCustomers = async (req, res) => {
-    try {
-      const { userId } = req.params; // Lấy userId từ tham số URL
-    
-      // Tìm tất cả các địa chỉ của khách hàng với userId
-      const customerInfos = await CustomerInfo.find({ userId });
-    
-      if (customerInfos.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy địa chỉ nào cho khách hàng.",
-        });
-      }
-    
-      return res.status(200).json({
-        success: true,
-        message: "Danh sách địa chỉ của khách hàng.",
-        data: customerInfos,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách địa chỉ:", error);
-      return res.status(500).json({
+const getCustomers = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const customerInfos = await CustomerInfo.find({ userId });
+
+    if (customerInfos.length === 0) {
+      return res.status(404).json({
         success: false,
-        message: "Có lỗi xảy ra khi lấy danh sách địa chỉ!",
+        message: "Không tìm thấy địa chỉ nào cho khách hàng.",
       });
     }
-  };
+
+    // Nếu chỉ có một địa chỉ, đặt nó là mặc định
+    if (customerInfos.length === 1) {
+      customerInfos[0].isDefault = true;
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Danh sách địa chỉ của khách hàng.",
+      data: customerInfos,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách địa chỉ:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Có lỗi xảy ra khi lấy danh sách địa chỉ!",
+    });
+  }
+};
   
   const editCustomer = async (req, res) => {
     try {
