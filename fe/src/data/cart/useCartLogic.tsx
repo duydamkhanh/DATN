@@ -75,9 +75,7 @@ export function useCart(userId: string | null) {
       },
       {
         onError: error => {
-          // Kiểm tra nếu lỗi liên quan đến số lượng vượt quá tồn kho
           if (error?.response?.data?.error === 'OUT_OF_STOCK') {
-            // Reload trang khi số lượng vượt quá tồn kho
             window.location.reload();
           }
         },
@@ -117,6 +115,7 @@ export function useCart(userId: string | null) {
           variantId: product.variantId,
           confirm: true,
         });
+        toast.success('Đã xoá sản phẩm khỏi giỏ hàng!');
       } catch (error) {
         toast.error('Có lỗi xảy ra khi giảm số lượng sản phẩm.');
       }
@@ -156,16 +155,14 @@ export function useCart(userId: string | null) {
       }
     );
   };
-  const handleDeleteByIdProduct = (variantId) => {
-    // Kiểm tra nếu không có variantId được truyền vào
+  const handleDeleteByIdProduct = (variantId: string) => {
     if (!variantId) {
       toast.error('Không tìm thấy sản phẩm để xóa. Vui lòng thử lại.');
       return;
     }
 
-    // Kiểm tra nếu sản phẩm tồn tại trong giỏ hàng
     const isProductInCart = cartData?.products?.some(
-      (product) => product.variantId === variantId
+      product => product.variantId === variantId
     );
 
     if (!isProductInCart) {
@@ -173,15 +170,14 @@ export function useCart(userId: string | null) {
       return;
     }
 
-    // Gửi yêu cầu xóa sản phẩm theo variantId
     deleteItemFromCart.mutate(
       {
         userId: userId || '',
-        variantIds: [variantId], // Chỉ xóa sản phẩm có variantId
+        variantIds: [variantId],
       },
       {
         onSuccess: () => {
-          setSelectedProducts((prev) => {
+          setSelectedProducts(prev => {
             const updatedProducts = { ...prev };
             delete updatedProducts[variantId];
             return updatedProducts;
@@ -194,7 +190,6 @@ export function useCart(userId: string | null) {
       }
     );
   };
-
 
   const toggleSelectProduct = (index: number) => {
     setSelectedProducts(prev => {
@@ -262,7 +257,7 @@ export function useCart(userId: string | null) {
   };
 
   const getAllItems = () => {
-    return cartData?.products || []; // Trả về tất cả các sản phẩm trong giỏ hàng hoặc một mảng rỗng nếu không có dữ liệu
+    return cartData?.products || [];
   };
 
   return {
