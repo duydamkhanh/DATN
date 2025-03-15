@@ -2,10 +2,17 @@ import instance from '@/api/axiosIntance';
 import ChatBot from '@/components/ChatBot';
 import CurrencyVND from '@/components/config/vnd';
 import FeaturedProducts from '@/components/featuredProducts';
+import { useCart } from '@/data/cart/useCartLogic';
 import useCommentMutation from '@/data/Comment/useCommentMutation';
 import { useFetchCategory } from '@/data/products/useProductList';
 import { useSocket } from '@/data/socket/useSocket';
-import { EllipsisHorizontal, StarSolid, Trash } from '@medusajs/icons';
+import {
+  EllipsisHorizontal,
+  EyeMini,
+  ShoppingCart,
+  StarSolid,
+  Trash,
+} from '@medusajs/icons';
 import { DropdownMenu, IconButton, toast } from '@medusajs/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useParams } from '@tanstack/react-router';
@@ -109,7 +116,6 @@ function DetailProduct() {
     mutationFn: data => instance.post('/cart/add-to-cart', data),
     onSuccess: () => {
       toast.success('Đã thêm sản phẩm vào giỏ hàng', {
-        description: 'Sản phẩm của bạn đã được thêm vào giỏ hàng thành công!',
         duration: 100,
       });
       queryClient.invalidateQueries(['cart']);
@@ -151,14 +157,21 @@ function DetailProduct() {
   ) {
     handleSizeChange(product.variants[0].size);
   }
+  const userId = localStorage.getItem('userId'); // Lấy userId từ localStorage
+
+  const { cartData, isLoading } = useCart(userId);
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
-      toast.error('Vui lòng chọn size và màu sắc!');
+      toast.error(!selectedSize ? 'Vui lòng chọn Size!' : 'Vui lòng chọn Màu!');
       return;
     }
 
-    const variant = product.variants.find(
+    // Lấy số lượng từ state (ô input)
+    const selectedQuantity = quantity;
+
+    // Tìm biến thể trong danh sách sản phẩm
+    const variant = product?.variants?.find(
       v => v.size === selectedSize && v.color === selectedColor
     );
 
@@ -167,41 +180,57 @@ function DetailProduct() {
       return;
     }
 
-    if (quantity > variant.countInStock) {
+    if (!product?._id || !variant?.sku) {
+      toast.error('Thông tin sản phẩm không hợp lệ.');
+      return;
+    }
+
+    // Kiểm tra nếu số lượng chọn lớn hơn tồn kho
+    if (variant.countInStock === 0 || selectedQuantity > variant.countInStock) {
       toast.error(
-        `Số lượng vượt quá tồn kho. Chỉ còn lại ${variant.countInStock} sản phẩm.`
+        variant.countInStock === 0
+          ? 'Mã hàng này đã hết, vui lòng thử lại sau hoặc chọn mã khác!'
+          : `Chỉ có thể thêm tối đa ${variant.countInStock} sản phẩm vào giỏ hàng!`
       );
       return;
     }
 
+    // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
+    const variantInCart = cartData?.products?.find(
+      v => v.variantId === variant.sku
+    );
+
+    // Số lượng hiện tại trong giỏ hàng
+    const quantityInCart = variantInCart ? variantInCart.quantity : 0;
+
+    // Số lượng mới sau khi thêm vào giỏ hàng
+    const newQuantity = quantityInCart + selectedQuantity;
+
+    // Kiểm tra nếu số lượng tổng cộng vượt quá tồn kho
+    if (newQuantity > variant.countInStock) {
+      toast.error(
+        `Bạn chỉ có thể thêm tối đa ${variant.countInStock} sản phẩm của mã này vào giỏ hàng.`
+      );
+      return;
+    }
+
+    // Gửi dữ liệu lên server
     addItemToCart.mutate({
       userId: localStorage.getItem('userId'),
       products: [
         {
-          productId: product._id,
-          variantId: variant.sku,
-          quantity,
-          priceAtTime: product.price,
+          productId: String(product._id),
+          variantId: String(variant.sku),
+          quantity: selectedQuantity,
+          priceAtTime: Number(variant.price) || 0,
         },
       ],
     });
   };
+
   const handleDeleteComment = (commentId: string) => {
     removeComment.mutate(commentId);
   };
-  const handleRatingChange = (newRating: number) => {
-    setRating(newRating); // Update the rating value
-  };
-  // Add this query
-  const { data: categoryData } = useQuery({
-    queryKey: ['category', product?.categoryId],
-    queryFn: async () => {
-      if (!product?.categoryId) return null;
-      const response = await instance.get(`/categories/${product.categoryId}`);
-      return response.data;
-    },
-    enabled: !!product?.categoryId,
-  });
 
   // Display loading or error if any
   if (loading) return <div>Đang tải...</div>;
@@ -343,7 +372,15 @@ function DetailProduct() {
                 </div>
                 <div className="product-single__price">
                   <CurrencyVND amount={product.price} />
+                  <div className="flex text-[13px] font-normal">
+                    <EyeMini />{' '}
+                    <span className="mr-1 font-medium">
+                      {product.viewCount}
+                    </span>{' '}
+                    người đang xem sản phẩm này
+                  </div>
                 </div>
+
                 <div className="product-single__short-desc">
                   <p>{product.description}</p>
                 </div>
@@ -354,13 +391,18 @@ function DetailProduct() {
                       <div className="swatch-list">
                         {uniqueSizes.map(size => (
                           <button
+                            key={size}
                             type="button"
                             onClick={() => handleSizeChange(size)}
-                            className={`rounded border px-4 py-2 ${
+                            className={`rounded-xl border px-3 py-2 transition-all duration-200 ${
                               selectedSize === size
-                                ? 'border-blue-500 bg-blue-500 text-white'
-                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-100'
+                                ? 'border-black bg-black text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:border-black'
                             }`}
+                            style={{
+                              borderColor:
+                                selectedSize === size ? 'black' : undefined,
+                            }}
                           >
                             {size}
                           </button>
@@ -378,35 +420,36 @@ function DetailProduct() {
                         Hướng dẫn kích cỡ
                       </a>
                     </div>
+
                     <div className="product-swatch color-swatches h-10">
                       <label>Màu</label>
                       <div className="swatch-list">
-                        {availableColors &&
-                          availableColors.map((color, index) => (
-                            <button
-                              type="button"
-                              key={color}
-                              onClick={() => setSelectedColor(color)}
-                              className={`h-8 w-8 rounded-full border focus:outline-none ${
-                                selectedColor === color
-                                  ? 'border-blue-500 ring-2 ring-blue-500'
-                                  : 'border-gray-300'
-                              }`}
-                              style={{
-                                backgroundColor: color,
-                                boxShadow:
-                                  selectedColor === color
-                                    ? '0 0 10px rgba(59, 130, 246, 0.7)'
-                                    : 'none',
-                              }}
-                              disabled={!selectedSize}
-                            ></button>
-                          ))}
+                        {availableColors.map(color => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => setSelectedColor(color)}
+                            className={`h-8 w-8 rounded-full border focus:outline-none ${
+                              selectedColor === color
+                                ? 'border-black ring-1 ring-black'
+                                : 'border-gray-700'
+                            }`}
+                            style={{
+                              backgroundColor: color,
+                              // boxShadow:
+                              //   selectedColor === color
+                              //     ? '0 0 10px rgba(0, 0, 0, 0.8)'
+                              //     : 'none',
+                            }}
+                            disabled={!selectedSize}
+                          ></button>
+                        ))}
                       </div>
                     </div>
                   </div>
 
                   <div className="product-single__addtocart">
+                    <p>Số lượng</p>
                     <div className="qty-control position-relative">
                       <input
                         type="number"
@@ -430,23 +473,41 @@ function DetailProduct() {
                         +
                       </div>
                     </div>
-                    {/* .qty-control */}
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.preventDefault(); // Ngừng hành động mặc định của form
-                        handleAddToCart(); // Gọi hàm thêm sản phẩm vào giỏ hàng
-                      }}
-                      disabled={addItemToCart.isLoading}
-                      className="btn btn-primary btn-addtocart js-open-aside"
-                      data-aside="cartDrawer"
-                    >
-                      {addItemToCart.isLoading
-                        ? 'Đang thêm...'
-                        : 'Thêm vào giỏ hàng'}
-                    </button>
-                    {/* js-open-aside */}
+
+                    {selectedSize && selectedColor && (
+                      <div className="meta-item flex items-center gap-2">
+                        <div className="flex gap-2 text-[17px] font-normal">
+                          {product.variants
+                            .filter(
+                              variant =>
+                                variant.size === selectedSize &&
+                                variant.color === selectedColor
+                            )
+                            .reduce(
+                              (total, variant) => total + variant.countInStock,
+                              0
+                            )}
+                        </div>
+                        <label>Sản phẩm có sẵn</label>
+                      </div>
+                    )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.preventDefault(); // Ngừng hành động mặc định của form
+                      handleAddToCart(); // Gọi hàm thêm sản phẩm vào giỏ hàng
+                    }}
+                    disabled={addItemToCart.isLoading}
+                    className="btn btn-primary btn-addtocart js-open-aside mb-4 flex gap-4"
+                    data-aside="cartDrawer"
+                  >
+                    <ShoppingCart />
+                    {addItemToCart.isLoading
+                      ? 'Đang thêm...'
+                      : 'Thêm vào giỏ hàng'}
+                  </button>
                 </form>
 
                 <div className="product-single__addtolinks">
