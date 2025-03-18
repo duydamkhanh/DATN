@@ -3,13 +3,15 @@ const CustomerInfo = require("../models/customerInfor");
 // Tạo mới khách hàng
 const createCustomer = async (req, res) => {
   try {
-    const { userId, name, phone, city, district, ward, address, isDefault } = req.body;
+    const { userId, name, phone, city, district, ward, address, isDefault } =
+      req.body;
 
     // Kiểm tra các trường bắt buộc
     if (!userId || !name || !phone || !city || !district || !ward || !address) {
       return res.status(400).json({
         success: false,
-        message: "Các trường userId, name, phone, city, district, ward, address là bắt buộc!",
+        message:
+          "Các trường userId, name, phone, city, district, ward, address là bắt buộc!",
       });
     }
 
@@ -60,11 +62,9 @@ const createCustomer = async (req, res) => {
   }
 };
 
-
 const getCustomers = async (req, res) => {
   try {
     const { userId } = req.params;
-
     const customerInfos = await CustomerInfo.find({ userId });
 
     if (customerInfos.length === 0) {
@@ -74,9 +74,13 @@ const getCustomers = async (req, res) => {
       });
     }
 
-    // Nếu chỉ có một địa chỉ, đặt nó là mặc định
-    if (customerInfos.length === 1) {
+    // Kiểm tra xem có địa chỉ nào đang là mặc định không
+    let hasDefault = customerInfos.some((info) => info.isDefault);
+
+    // Nếu không có địa chỉ nào được đặt làm mặc định, gán địa chỉ đầu tiên làm mặc định
+    if (!hasDefault && customerInfos.length > 0) {
       customerInfos[0].isDefault = true;
+      await customerInfos[0].save(); // Lưu cập nhật vào database
     }
 
     return res.status(200).json({
@@ -92,92 +96,102 @@ const getCustomers = async (req, res) => {
     });
   }
 };
-  
-  const editCustomer = async (req, res) => {
-    try {
-      const { id, userId } = req.params;
-      const { name, phone, city, district, ward, address, isDefault } = req.body;
-  
-      if (!userId || !id) {
-        return res.status(400).json({
-          success: false,
-          message: "Thiếu userId hoặc id trong yêu cầu!",
-        });
-      }
-  
-      if (!name || !phone || !city || !district || !ward || !address) {
-        return res.status(400).json({
-          success: false,
-          message: "Thiếu dữ liệu cần thiết trong payload!",
-        });
-      }
-  
-      const customer = await CustomerInfo.findOne({ _id: id, userId });
-      if (!customer) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy khách hàng!",
-        });
-      }
-  
-      if (isDefault) {
-        await CustomerInfo.updateMany(
-          { userId },
-          { $set: { isDefault: false } }
-        );
-      }
-  
-      Object.assign(customer, { name, phone, city, district, ward, address, isDefault });
-      const updatedCustomer = await customer.save();
-  
-      const hasDefault = await CustomerInfo.findOne({ userId, isDefault: true });
-      if (!hasDefault) {
-        const firstCustomer = await CustomerInfo.findOne({ userId }).sort({ _id: 1 });
-        if (firstCustomer) {
-          firstCustomer.isDefault = true;
-          await firstCustomer.save();
-        }
-      }
-  
-      return res.status(200).json({
-        success: true,
-        data: updatedCustomer,
-      });
-    } catch (error) {
-      console.error("Lỗi cập nhật địa chỉ:", error.message);
-      return res.status(500).json({
+
+const editCustomer = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+    const { name, phone, city, district, ward, address, isDefault } = req.body;
+
+    if (!userId || !id) {
+      return res.status(400).json({
         success: false,
-        message: "Đã xảy ra lỗi trong quá trình xử lý!",
+        message: "Thiếu userId hoặc id trong yêu cầu!",
       });
     }
-  };
-  
-  const getCustomerById = async (req, res) => {
-    try {
-      const { userId } = req.params; 
-  
-      const customerInfo = await CustomerInfo.findOne({ userId, isDefault: true });
-  
-      if (!customerInfo) {
-        return res.status(404).json({
-          success: false,
-          message: "Không tìm thấy địa chỉ mặc định cho khách hàng.",
-        });
-      }
-  
-      return res.status(200).json({
-        success: true,
-        message: "Địa chỉ mặc định của khách hàng.",
-        data: customerInfo,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy địa chỉ khách hàng:", error);
-      return res.status(500).json({
+
+    if (!name || !phone || !city || !district || !ward || !address) {
+      return res.status(400).json({
         success: false,
-        message: "Có lỗi xảy ra khi lấy địa chỉ khách hàng.",
+        message: "Thiếu dữ liệu cần thiết trong payload!",
       });
     }
-  };
+
+    const customer = await CustomerInfo.findOne({ _id: id, userId });
+    if (!customer) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy khách hàng!",
+      });
+    }
+
+    if (isDefault) {
+      await CustomerInfo.updateMany({ userId }, { $set: { isDefault: false } });
+    }
+
+    Object.assign(customer, {
+      name,
+      phone,
+      city,
+      district,
+      ward,
+      address,
+      isDefault,
+    });
+    const updatedCustomer = await customer.save();
+
+    const hasDefault = await CustomerInfo.findOne({ userId, isDefault: true });
+    if (!hasDefault) {
+      const firstCustomer = await CustomerInfo.findOne({ userId }).sort({
+        _id: 1,
+      });
+      if (firstCustomer) {
+        firstCustomer.isDefault = true;
+        await firstCustomer.save();
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: updatedCustomer,
+    });
+  } catch (error) {
+    console.error("Lỗi cập nhật địa chỉ:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Đã xảy ra lỗi trong quá trình xử lý!",
+    });
+  }
+};
+
+const getCustomerById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const customerInfo = await CustomerInfo.findOne({
+      userId,
+      isDefault: true,
+    });
+
+    if (!customerInfo) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy địa chỉ mặc định cho khách hàng.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Địa chỉ mặc định của khách hàng.",
+      data: customerInfo,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy địa chỉ khách hàng:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Có lỗi xảy ra khi lấy địa chỉ khách hàng.",
+    });
+  }
+};
 // Xóa khách hàng
 const deleteCustomer = async (req, res) => {
   try {
@@ -211,7 +225,7 @@ const deleteCustomer = async (req, res) => {
 const editCustomerAddress = async (req, res) => {
   try {
     const { id, userId } = req.params;
-    const { isDefault } = req.body; 
+    const { isDefault } = req.body;
     if (!userId || !id) {
       return res.status(400).json({
         success: false,
@@ -229,22 +243,21 @@ const editCustomerAddress = async (req, res) => {
 
     if (isDefault !== undefined) {
       if (isDefault) {
-        
         await CustomerInfo.updateMany(
           { userId, _id: { $ne: id } },
           { $set: { isDefault: false } }
         );
       }
-      customer.isDefault = isDefault; 
+      customer.isDefault = isDefault;
     }
-
 
     const updatedCustomer = await customer.save();
 
-    
     const hasDefault = await CustomerInfo.exists({ userId, isDefault: true });
     if (!hasDefault) {
-      const firstCustomer = await CustomerInfo.findOne({ userId }).sort({ _id: 1 });
+      const firstCustomer = await CustomerInfo.findOne({ userId }).sort({
+        _id: 1,
+      });
       if (firstCustomer) {
         firstCustomer.isDefault = true;
         await firstCustomer.save();
@@ -264,10 +277,11 @@ const editCustomerAddress = async (req, res) => {
   }
 };
 
-
-
-
-
-  
-
-module.exports = { createCustomer, getCustomers, editCustomer, getCustomerById, deleteCustomer, editCustomerAddress};
+module.exports = {
+  createCustomer,
+  getCustomers,
+  editCustomer,
+  getCustomerById,
+  deleteCustomer,
+  editCustomerAddress,
+};
