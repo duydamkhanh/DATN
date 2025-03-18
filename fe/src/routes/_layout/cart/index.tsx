@@ -2,7 +2,6 @@ import CurrencyVND from '@/components/config/vnd';
 import ErrorCart from '@/components/errors/error-cart';
 import LoginCart from '@/components/errors/error-login-cart';
 import { useCart } from '@/data/cart/useCartLogic';
-import { ChevronRightMini, ReceiptPercent } from '@medusajs/icons';
 import { toast } from '@medusajs/ui';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -34,6 +33,7 @@ function Cart() {
     toggleSelectAll,
     totalSelectedPrice,
     getSelectedItems,
+    listProduct,
   } = useCart(userId);
 
   if (isLoading) {
@@ -55,8 +55,25 @@ function Cart() {
       state: { selectedItems },
     });
   };
+
+  const getImageSrc = variantId => {
+    // Tìm sản phẩm chứa biến thể có sku trùng với variantId
+    const productWithVariant = listProduct.find(product =>
+      product.variants?.some(
+        variant => String(variant.sku) === String(variantId)
+      )
+    );
+
+    // Tìm chính xác biến thể trong sản phẩm đó
+    const matchedVariant = productWithVariant?.variants?.find(
+      variant => String(variant.sku) === String(variantId)
+    );
+
+    return matchedVariant?.imageVariant || 'path_to_default_image.jpg';
+  };
+
   return (
-    <div className='px-[40px]'>
+    <div className="px-[40px]">
       <main>
         <div className="mb-4 pb-4" />
         <section className="shop-checkout container">
@@ -72,7 +89,7 @@ function Cart() {
                     <th>Giá</th>
                     <th>Số Lượng</th>
                     <th>Tổng</th>
-                    <th className='flex items-center gap-2 justify-start w-[85px]'>
+                    <th className="flex w-[85px] items-center justify-start gap-2">
                       <div>tất cả</div>
                       <input
                         className="h-4 w-4"
@@ -89,13 +106,26 @@ function Cart() {
                       <td>
                         <div className="shopping-cart__product-item">
                           <a href="product1_simple.html">
-                            <img loading="lazy" src={product.image} width={120} height={120} />
+                            <img
+                              loading="lazy"
+                              src={getImageSrc(product.variantId)}
+                              width={120}
+                              height={120}
+                            />
                           </a>
                         </div>
                       </td>
                       <td>
                         <div className="shopping-cart__product-item__detail">
-                          <h4><Link to="/" className="capitalize">{product.name}</Link></h4>
+                          <h4>
+                            <Link to="/" className="capitalize">
+                              <h6 className="cart-drawer-item__title fw-normal text-black">
+                                {product.name.length > 15
+                                  ? product.name.slice(0, 15) + '...'
+                                  : product.name}
+                              </h6>
+                            </Link>
+                          </h4>
                           <ul className="shopping-cart__product-item__options">
                             <li>Color: {product.color || 'Không có'}</li>
                             <li>Size: {product.size || 'Không có'}</li>
@@ -103,25 +133,94 @@ function Cart() {
                         </div>
                       </td>
                       <td>
-                        <span className="shopping-cart__product-price"><CurrencyVND amount={productPrice(index)} /></span>
+                        <span className="shopping-cart__product-price">
+                          <CurrencyVND amount={productPrice(index)} />
+                        </span>
                       </td>
                       <td>
-                        <div className="qty-control position-relative">
-                          <input type="number" name="quantity" value={quantities[index] || product.quantity}
-                            onChange={e =>
-                              handleQuantityChange(index, e.target.value)
-                            } defaultValue={3} min={1} className="qty-control__number text-center" />
-                          <div className="qty-control__reduce" onClick={() => decrementQuantity(index)}>-</div>
-                          <div className="qty-control__increase" onClick={() => incrementQuantity(index)}>+</div>
-                        </div>{/* .qty-control */}
+                        {(() => {
+                          // Lấy số lượng tồn kho của sản phẩm
+                          const countInStock =
+                            listProduct
+                              ?.find(p =>
+                                p.variants?.some(
+                                  v => v.sku === product.variantId
+                                )
+                              )
+                              ?.variants.find(v => v.sku === product.variantId)
+                              ?.countInStock ?? 0;
+
+                          // Lấy số lượng hiện tại của sản phẩm trong giỏ hàng
+                          const currentQuantity =
+                            quantities[index] || product.quantity;
+
+                          return (
+                            <>
+                              <div className="qty-control position-relative">
+                                <input
+                                  type="number"
+                                  name="quantity"
+                                  value={currentQuantity}
+                                  onChange={e =>
+                                    handleQuantityChange(
+                                      index,
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  min={1}
+                                  max={countInStock}
+                                  className="qty-control__number text-center"
+                                />
+                                <div
+                                  className="qty-control__reduce"
+                                  onClick={() =>
+                                    currentQuantity > 1 &&
+                                    decrementQuantity(index)
+                                  }
+                                  style={{
+                                    opacity: currentQuantity > 1 ? 1 : 0.5,
+                                    pointerEvents:
+                                      currentQuantity > 1 ? 'auto' : 'none',
+                                  }}
+                                >
+                                  -
+                                </div>
+                                <div
+                                  className="qty-control__increase"
+                                  onClick={() =>
+                                    currentQuantity < countInStock &&
+                                    incrementQuantity(index)
+                                  }
+                                  style={{
+                                    opacity:
+                                      currentQuantity < countInStock ? 1 : 0.5,
+                                    pointerEvents:
+                                      currentQuantity < countInStock
+                                        ? 'auto'
+                                        : 'none',
+                                  }}
+                                >
+                                  +
+                                </div>
+                              </div>
+                              <div className="mt-1 text-sm text-gray-500">
+                                Còn lại: {countInStock ?? 'Không xác định'} sản
+                                phẩm
+                              </div>
+                            </>
+                          );
+                        })()}
                       </td>
+
                       <td>
-                        <span className="shopping-cart__subtotal w-36"><CurrencyVND
-                          amount={
-                            (quantities[index] || product.quantity) *
-                            productPrice(index)
-                          }
-                        /></span>
+                        <span className="shopping-cart__subtotal w-36">
+                          <CurrencyVND
+                            amount={
+                              (quantities[index] || product.quantity) *
+                              productPrice(index)
+                            }
+                          />
+                        </span>
                       </td>
                       <td className="px-4 py-4 text-center">
                         <input
@@ -136,7 +235,12 @@ function Cart() {
                 </tbody>
               </table>
               <div className="mt-2 flex justify-end">
-                <button className="btn btn-light " onClick={handleDeleteSelectedProducts}>Xóa</button>
+                <button
+                  className="btn btn-light"
+                  onClick={handleDeleteSelectedProducts}
+                >
+                  Xóa
+                </button>
                 {/* <button className="btn btn-light">Chọn tất cả({cartData?.products?.length || 0})</button> */}
               </div>
             </div>
@@ -146,15 +250,18 @@ function Cart() {
                   <h3>Tổng Giỏ Hàng</h3>
                   <table className="cart-totals">
                     <tbody>
-                      <tr className=''>
-                        <th>Tổng thanh toán (VND):{' '}</th>
-                        <div className='text-2xl'><CurrencyVND amount={totalSelectedPrice || '0'} /></div>
+                      <tr className="">
+                        <th>Tổng thanh toán (VND): </th>
+                        <div className="text-2xl">
+                          <CurrencyVND amount={totalSelectedPrice || '0'} />
+                        </div>
                       </tr>
-
                     </tbody>
                   </table>
                   <tr>
-                    <li className='mt-2'>Phí vận chuyển được tính ở trang thanh toán</li>
+                    <li className="mt-2">
+                      Phí vận chuyển được tính ở trang thanh toán
+                    </li>
                   </tr>
                   <tr>
                     <li>Áp mã giảm giá ở trang thanh toán</li>
@@ -162,7 +269,12 @@ function Cart() {
                 </div>
                 <div className="mobile_fixed-btn_wrapper">
                   <div className="button-wrapper container">
-                    <button className="btn btn-primary btn-checkout uppercase text-xl font-semibold" onClick={handleCheckout}>Thanh toán</button>
+                    <button
+                      className="btn btn-primary btn-checkout text-xl font-semibold uppercase"
+                      onClick={handleCheckout}
+                    >
+                      Thanh toán
+                    </button>
                   </div>
                 </div>
               </div>
@@ -170,9 +282,8 @@ function Cart() {
           </div>
         </section>
       </main>
-      <div className="mb-5 pb-xl-5" />
+      <div className="pb-xl-5 mb-5" />
     </div>
-
   );
 }
 
