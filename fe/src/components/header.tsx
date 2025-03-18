@@ -2,14 +2,7 @@ import { useCart } from '@/data/cart/useCartLogic';
 import { useFetchCart } from '@/data/cart/useFetchCart';
 import { toast } from '@medusajs/ui';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import {
-  ChangeEvent,
-  KeyboardEvent,
-  KeyboardEventHandler,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import '../../css/plugins/swiper.min.css';
 import imgCart from '../assets/images/cart_trong.jpg';
 import nav_bg from '../assets/images/nav-bg.jpg';
@@ -107,19 +100,13 @@ const Header = () => {
 
   const {
     quantities,
-    selectedProducts,
-    selectAll,
     handleQuantityChange,
     incrementQuantity,
     decrementQuantity,
     productPrice,
-    handleDeleteSelectedProducts,
     handleDeleteByIdProduct,
-    toggleSelectProduct,
-    toggleSelectAll,
-    totalSelectedPrice,
-    getSelectedItems,
     getAllItems,
+    listProduct,
   } = useCart(userId);
 
   // if (!cartData || !cartData.products || cartData.products.length === 0) {
@@ -156,6 +143,22 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const getImageSrc = variantId => {
+    // Tìm sản phẩm chứa biến thể có sku trùng với variantId
+    const productWithVariant = listProduct.find(product =>
+      product.variants?.some(
+        variant => String(variant.sku) === String(variantId)
+      )
+    );
+
+    // Tìm chính xác biến thể trong sản phẩm đó
+    const matchedVariant = productWithVariant?.variants?.find(
+      variant => String(variant.sku) === String(variantId)
+    );
+
+    return matchedVariant?.imageVariant || 'path_to_default_image.jpg';
+  };
+
   return (
     <div className="pb-32">
       <header
@@ -166,14 +169,13 @@ const Header = () => {
         <div className="container mt-[-10px] px-[55px]">
           <div className="header-desk header-desk_type_1">
             <div className="logo">
-              {/* <a href="/">
+              <a href="/">
                 <img
-                  src="/fasion zone.png"
+                  src="/baya.png"
                   alt="Uomo"
-                  className="logo__image d-block w-40"
+                  className="logo__image d-block w-20"
                 />
-              </a> */}
-              <h1 className="text-xl font-semibold">baya</h1>
+              </a>
             </div>
             {/* /.logo */}
             <nav className="navigation">
@@ -470,14 +472,20 @@ const Header = () => {
                       <img
                         loading="lazy"
                         className="cart-drawer-item__img h-24 w-24"
-                        src={product.image}
+                        src={getImageSrc(product.variantId)}
+                        alt="Product Image"
                       />
                     </a>
                   </div>
                   <div className="cart-drawer-item__info flex-grow-1">
                     <h6 className="cart-drawer-item__title fw-normal text-black">
-                      <a href="">{product.name}</a>
+                      <a href="">
+                        {product.name.length > 30
+                          ? product.name.slice(0, 30) + '...'
+                          : product.name}
+                      </a>
                     </h6>
+
                     <p className="cart-drawer-item__option text-secondary">
                       Color: {product.color || 'Không có'}
                     </p>
@@ -487,12 +495,15 @@ const Header = () => {
                     <div className="d-flex align-items-center justify-content-between mt-1">
                       <div className="qty-control position-relative">
                         <input
-                          type="text"
+                          type="number"
                           min={1}
-                          value={quantities[index] || product.quantity}
-                          onChange={e =>
-                            handleQuantityChange(index, e.target.value)
-                          }
+                          value={quantities[index] ?? product.quantity}
+                          onChange={e => {
+                            const value = Number(e.target.value);
+                            if (value >= 1) {
+                              handleQuantityChange(index, value);
+                            }
+                          }}
                           className="qty-control__number border-0 text-center"
                         />
                         <div
@@ -508,6 +519,7 @@ const Header = () => {
                           +
                         </div>
                       </div>
+
                       {/* .qty-control */}
                       <span className="cart-drawer-item__price money price">
                         <CurrencyVND
