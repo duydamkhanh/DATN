@@ -169,12 +169,13 @@ const Header = () => {
         <div className="container mt-[-10px] px-[55px]">
           <div className="header-desk header-desk_type_1">
             <div className="logo">
-              <a href="/">
+            <a href="/">
                 <img
                   src="/baya.png"
                   alt="Uomo"
                   className="logo__image d-block w-20"
                 />
+              </a>
               </a>
             </div>
             {/* /.logo */}

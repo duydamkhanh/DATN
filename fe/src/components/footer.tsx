@@ -11,12 +11,12 @@ const Footer = () => {
           <div className="row row-cols-lg-5 row-cols-2">
             <div className="footer-column footer-store-info col-12 mb-lg-0 mb-4">
               <div className="logo">
-                <a href="index.html">
-                  {/* <img
-                    src="/fasion zone.png"
+              <a href="index.html">
+                  <img
+                    src="/baya.png"
                     alt="Uomo"
-                    className="logo__image d-block w-48"
-                  /> */} baya
+                    className="logo__image d-block w-20"
+                  />
                 </a>
               </div>
               {/* /.logo */}
