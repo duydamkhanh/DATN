@@ -13,6 +13,8 @@ const {
   searchProduct,
   filterProducts,
   updateProductsCategoris,
+  getMostViewedProducts,
+  uploadVariant,
 } = require("../controllers/product");
 
 const router = express.Router();
@@ -31,15 +33,24 @@ router.post(
 );
 
 router.post(
+  `/upload-variant-product`,
+  upload.single("variant"),
+  uploadVariant
+);
+
+router.post(
   `/upload-gallery-product`,
   upload.array("photos", 10),
   uploadGallery
 );
+
+
 
 router.put(`/products/:id`, updateProduct);
 
 router.delete(`/products/:id`, deleteProduct);
 router.get("/product", getProductAll);
 router.get('/search', searchProduct);
+router.get("/most-viewed", getMostViewedProducts);
 
 module.exports = router;
