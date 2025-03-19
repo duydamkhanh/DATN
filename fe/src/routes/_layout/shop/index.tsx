@@ -103,7 +103,7 @@ function Shop() {
           );
           const average = totalRating / response.data.length;
           setAverageRating(average); // Cập nhật số sao trung bình
-        } catch (err) { }
+        } catch (err) {}
       };
       fetchComments();
     }
@@ -152,10 +152,7 @@ function Shop() {
                       onClick={() => setSelectedCategory(null)}
                       className="me-xl-4 me-3 pe-1"
                     >
-                      <a
-
-                        className="menu-link menu-link_us-s menu-link_active"
-                      >
+                      <a className="menu-link menu-link_us-s menu-link_active">
                         Tất Cả
                       </a>
                     </li>
@@ -316,11 +313,11 @@ function Shop() {
                         </Link>
                       </div>
                       <div className="pc__info position-relative">
-                        <h6 className="pc__title text-[16px] capitalize">
-                          <a
-                            href={`${product.slug ? product.slug : product._id}/quickviewProduct`}
-                          >
-                            {product.name}
+                        <h6 className="cart-drawer-item__title fw-normal text-black">
+                          <a href="">
+                            {product.name.length > 30
+                              ? product.name.slice(0, 30) + '...'
+                              : product.name}
                           </a>
                         </h6>
 

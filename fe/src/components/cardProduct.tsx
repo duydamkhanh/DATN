@@ -8,7 +8,7 @@ import { ShoppingCartSolid } from '@medusajs/icons';
 import { toast } from '@medusajs/ui';
 import { Link, useNavigate } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
-import CurrencyVND from './config/vnd';
+import CurrencyVND from '@/components/config/vnd';
 
 const CardProduct: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -198,7 +198,11 @@ const CardProduct: React.FC = () => {
                             <Link
                               to={`${product.slug ? product.slug : product._id}/quickviewProduct`}
                             >
-                              {product.name}
+                              <h6 className="cart-drawer-item__title fw-normal text-black">
+                                {product.name.length > 30
+                                  ? product.name.slice(0, 30) + '...'
+                                  : product.name}
+                              </h6>
                             </Link>
                           </h6>
                           <div className="product-card__price d-flex">
