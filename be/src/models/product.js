@@ -15,6 +15,9 @@ const variantSchema = new mongoose.Schema({
     required: true,
     default: 0,
   },
+  imageVariant: {
+    type: String,
+  },
   countInStock: {
     type: Number,
     required: true,
@@ -35,7 +38,7 @@ const variantSchema = new mongoose.Schema({
 variantSchema.pre("save", function (next) {
   if (!this.sku) {
     // Tạo SKU tự động nếu không có
-    this.sku = `${this.size}-${this.color}-${Date.now()}`;
+    this.sku = `${Date.now()}-${this.size}-${this.color}`;
   }
   next();
 });
@@ -84,6 +87,10 @@ const productSchema = new mongoose.Schema(
       type: [String], // Chỉ định rõ kiểu dữ liệu cho mảng
     },
     variants: [variantSchema],
+    viewCount: {
+      type: Number,
+      default: 0, 
+    },
   },
   { timestamps: true, versionKey: false } // Tự động thêm thời gian tạo và cập nhật
 );

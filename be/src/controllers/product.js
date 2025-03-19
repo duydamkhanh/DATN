@@ -72,12 +72,39 @@ const getProductById = async (req, res) => {
   }
 };
 
+// const getProductBySlug = async (req, res) => {
+//   try {
+//     const productSlug = req.params.slug; // Lấy slug từ tham số đường dẫn
+
+//     // Tìm sản phẩm theo slug
+//     const product = await Product.findOne({ slug: productSlug });
+
+//     if (!product) {
+//       return res.status(404).json({ message: "Product not found." });
+//     }
+
+//     // Kiểm tra tồn kho và thêm tag nếu cần
+//     const isOutOfStock = product.variants?.every(
+//       (variant) => variant.countInStock === 0
+//     );
+//     const tags = isOutOfStock ? ["Hết hàng"] : [];
+//     // Thêm tag vào phản hồi
+//     return res.status(200).json({ product: { ...product.toObject(), tags } });
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
+
 const getProductBySlug = async (req, res) => {
   try {
     const productSlug = req.params.slug; // Lấy slug từ tham số đường dẫn
 
-    // Tìm sản phẩm theo slug
-    const product = await Product.findOne({ slug: productSlug });
+    // Tìm sản phẩm theo slug và tăng viewCount
+    const product = await Product.findOneAndUpdate(
+      { slug: productSlug },
+      { $inc: { viewCount: 1 } }, // Tăng viewCount lên 1
+      { new: true } // Trả về bản ghi mới sau khi cập nhật
+    );
 
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
@@ -88,7 +115,8 @@ const getProductBySlug = async (req, res) => {
       (variant) => variant.countInStock === 0
     );
     const tags = isOutOfStock ? ["Hết hàng"] : [];
-    // Thêm tag vào phản hồi
+
+    // Trả về phản hồi
     return res.status(200).json({ product: { ...product.toObject(), tags } });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -192,6 +220,15 @@ const relatedProduct = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+const uploadVariant = async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  res.json(file.path);
 };
 
 const uploadThumbnail = async (req, res) => {
@@ -421,6 +458,63 @@ const updateProductsCategoris = async (req, res) => {
 };
 
 
+const getMostViewedProducts = async (req, res) => {
+  const { limit = 10, page = 1 } = req.query;
+  const skip = (page - 1) * limit;
+
+  try {
+    // Lấy danh sách sản phẩm có viewCount > 0 theo số lượt xem giảm dần
+    const products = await Product.find({ viewCount: { $gt: 0 } }) // Chỉ lấy sản phẩm có viewCount > 0
+      .sort({ viewCount: -1 })
+      .limit(Number(limit))
+      .skip(Number(skip))
+      .populate({
+        path: "category",
+        match: { status: "SHOW" },
+        select: "name",
+      });
+
+    const totalItems = await Product.countDocuments({ viewCount: { $gt: 0 } }); // Chỉ đếm sản phẩm có viewCount > 0
+
+    // Kiểm tra trạng thái tồn kho và thêm tag "Hết hàng"
+    const productsWithTags = products.map((product) => {
+      const isOutOfStock = product.variants.every(
+        (variant) => variant.countInStock === 0
+      );
+      return {
+        ...product.toObject(),
+        tags: isOutOfStock ? ["Hết hàng"] : [],
+      };
+    });
+
+    if (productsWithTags.length === 0) {
+      return res.status(200).json({
+        meta: {
+          totalItems: 0,
+          totalPages: 0,
+          currentPage: Number(page),
+          limit: Number(limit),
+        },
+        data: [],
+      });
+    }
+
+    return res.status(200).json({
+      meta: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: Number(page),
+        limit: Number(limit),
+      },
+      data: productsWithTags,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
 module.exports = {
   getProduct,
   getProductById,
@@ -435,4 +529,6 @@ module.exports = {
   searchProduct,
   filterProducts,
   updateProductsCategoris,
+  getMostViewedProducts,
+  uploadVariant
 };
