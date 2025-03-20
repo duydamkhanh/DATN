@@ -122,16 +122,10 @@ function DetailProduct() {
     },
     onError: error => {
       if (error.response) {
-        toast.error(
-          `Có lỗi xảy ra: ${error.response.data.message || 'Lỗi không xác định'}`,
-          {
-            description:
-              'Không thể thêm sản phẩm vào giỏ hàng, vui lòng thử lại.',
-            duration: 1000,
-          }
-        );
-      } else {
-        toast.error('Lỗi kết nối, vui lòng thử lại sau.');
+        toast.warning(`Không thể thêm vào giỏ hàng!`, {
+          description: 'Bạn cần đăng nhập để thêm vào giỏ hàng.',
+          duration: 1000,
+        });
       }
     },
   });
@@ -163,7 +157,9 @@ function DetailProduct() {
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
-      toast.error(!selectedSize ? 'Vui lòng chọn Size!' : 'Vui lòng chọn Màu!');
+      toast.warning(
+        !selectedSize ? 'Vui lòng chọn Size!' : 'Vui lòng chọn Màu!'
+      );
       return;
     }
 
@@ -176,18 +172,20 @@ function DetailProduct() {
     );
 
     if (!variant) {
-      toast.error('Không tìm thấy biến thể sản phẩm với size và màu đã chọn.');
+      toast.warning(
+        'Không tìm thấy biến thể sản phẩm với size và màu đã chọn.'
+      );
       return;
     }
 
     if (!product?._id || !variant?.sku) {
-      toast.error('Thông tin sản phẩm không hợp lệ.');
+      toast.warning('Thông tin sản phẩm không hợp lệ.');
       return;
     }
 
     // Kiểm tra nếu số lượng chọn lớn hơn tồn kho
     if (variant.countInStock === 0 || selectedQuantity > variant.countInStock) {
-      toast.error(
+      toast.warning(
         variant.countInStock === 0
           ? 'Mã hàng này đã hết, vui lòng thử lại sau hoặc chọn mã khác!'
           : `Chỉ có thể thêm tối đa ${variant.countInStock} sản phẩm vào giỏ hàng!`
@@ -208,7 +206,7 @@ function DetailProduct() {
 
     // Kiểm tra nếu số lượng tổng cộng vượt quá tồn kho
     if (newQuantity > variant.countInStock) {
-      toast.error(
+      toast.warning(
         `Bạn chỉ có thể thêm tối đa ${variant.countInStock} sản phẩm của mã này vào giỏ hàng.`
       );
       return;
@@ -259,6 +257,35 @@ function DetailProduct() {
   };
 
   const category = categories?.find(cat => cat._id === product.category);
+
+  const selectedVariant = product.variants.find(
+    variant => variant.size === selectedSize && variant.color === selectedColor
+  );
+
+  const countInStock = selectedVariant ? selectedVariant.countInStock : 0;
+
+  const handleInputChange = e => {
+    const inputValue = e.target.value;
+
+    if (!/^\d*$/.test(inputValue)) return;
+
+    const newValue =
+      inputValue === ''
+        ? ''
+        : Math.max(1, Math.min(countInStock, Number(inputValue)));
+
+    if (Number(inputValue) > countInStock) {
+      toast.warning(`Chỉ còn ${countInStock} sản phẩm trong kho!`, {
+        duration: 1000,
+      });
+    }
+
+    setQuantity(newValue);
+  };
+
+  const selectedVariants = product.variants.find(
+    v => v.size === selectedSize && v.color === selectedColor
+  );
 
   return (
     <div>
@@ -370,8 +397,13 @@ function DetailProduct() {
                     </span>
                   </div>
                 </div>
+                {/* test */}
                 <div className="product-single__price">
-                  <CurrencyVND amount={product.price} />
+                  <CurrencyVND
+                    amount={
+                      selectedVariants ? selectedVariants.price : product.price
+                    }
+                  />
                   <div className="flex text-[13px] font-normal">
                     <EyeMini />{' '}
                     <span className="mr-1 font-medium">
@@ -454,21 +486,34 @@ function DetailProduct() {
                       <input
                         type="number"
                         name="quantity"
-                        defaultValue={1}
                         min={1}
+                        max={countInStock}
                         value={quantity}
-                        readOnly
+                        onChange={handleInputChange}
                         className="qty-control__number text-center"
                       />
                       <div
                         className="qty-control__reduce"
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        onClick={() =>
+                          setQuantity(prev => Math.max(1, prev - 1))
+                        }
+                        style={{
+                          opacity: quantity > 1 ? 1 : 0.5,
+                          pointerEvents: quantity > 1 ? 'auto' : 'none',
+                        }}
                       >
                         -
                       </div>
                       <div
                         className="qty-control__increase"
-                        onClick={() => setQuantity(quantity + 1)}
+                        onClick={() =>
+                          setQuantity(prev => Math.min(countInStock, prev + 1))
+                        }
+                        style={{
+                          opacity: quantity < countInStock ? 1 : 0.5,
+                          pointerEvents:
+                            quantity < countInStock ? 'auto' : 'none',
+                        }}
                       >
                         +
                       </div>
@@ -477,16 +522,7 @@ function DetailProduct() {
                     {selectedSize && selectedColor && (
                       <div className="meta-item flex items-center gap-2">
                         <div className="flex gap-2 text-[17px] font-normal">
-                          {product.variants
-                            .filter(
-                              variant =>
-                                variant.size === selectedSize &&
-                                variant.color === selectedColor
-                            )
-                            .reduce(
-                              (total, variant) => total + variant.countInStock,
-                              0
-                            )}
+                          {countInStock}
                         </div>
                         <label>Sản phẩm có sẵn</label>
                       </div>
@@ -509,7 +545,7 @@ function DetailProduct() {
                       : 'Thêm vào giỏ hàng'}
                   </button>
                 </form>
-
+                {/*test   */}
                 <div className="product-single__addtolinks">
                   <a
                     href="#"
