@@ -1,10 +1,10 @@
 import instance from '@/api/axiosIntance';
 import { FocusModal } from '@/components/ui/custom-focus-modal';
 import { useFetchAddress } from '@/data/address/useFetchAddress';
-import { Badge, Button, toast } from '@medusajs/ui';
 import { Plus } from '@medusajs/icons';
+import { Badge, toast } from '@medusajs/ui';
 import { useEffect, useState } from 'react';
-import ModalCreateCustomInfor from './modal-create-custom-infor';
+import ModalCreateCustomInfor from '@/components/custom-infor/modal-create-custom-infor';
 
 const ModalListCustomInfor = ({
   isOpen,
@@ -13,7 +13,7 @@ const ModalListCustomInfor = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentAddress, setCurrentAddress] = useState(null);
 
@@ -35,7 +35,6 @@ const ModalListCustomInfor = ({
   }, []);
 
   const { data, isLoading, error, refetch } = useFetchAddress(userId);
-  console.log('address', data);
 
   if (isLoading) {
     return <div>Đang tải...</div>;
@@ -46,8 +45,9 @@ const ModalListCustomInfor = ({
     return <div>Lỗi khi tải địa chỉ. Vui lòng thử lại.</div>;
   }
 
-  const sortedAddresses = data?.data.sort((a, b) =>
-    a.isDefault ? -1 : b.isDefault ? 1 : 0
+  const sortedAddresses = data?.data.sort(
+    (a: { isDefault: boolean }, b: { isDefault: boolean }) =>
+      a.isDefault ? -1 : b.isDefault ? 1 : 0
   );
 
   const updateIsDefault = async (addressId: string | undefined) => {
@@ -68,7 +68,6 @@ const ModalListCustomInfor = ({
         (address: { _id: string }) => address._id === addressId
       );
       if (!selectedAddress) {
-        console.error('Địa chỉ không tồn tại với ID:', addressId);
         toast.error('Địa chỉ không tồn tại!');
         return;
       }
@@ -79,7 +78,6 @@ const ModalListCustomInfor = ({
         return;
       }
 
-      console.log('Gửi yêu cầu cập nhật địa chỉ ID:', addressId);
       const response = await instance.put(
         `/editcustomer/${addressId}/${userId}`,
         {
@@ -104,28 +102,28 @@ const ModalListCustomInfor = ({
     }
   };
 
-  const deleteEntity = async (addressId: string) => {
-    if (!userId) {
-      toast.error('Không tìm thấy userId!');
-      return;
-    }
+  // const deleteEntity = async (addressId: string) => {
+  //   if (!userId) {
+  //     toast.error('Không tìm thấy userId!');
+  //     return;
+  //   }
 
-    try {
-      const response = await instance.delete(
-        `/customer/${userId}/${addressId}`
-      );
+  //   try {
+  //     const response = await instance.delete(
+  //       `/customer/${userId}/${addressId}`
+  //     );
 
-      if (response?.data?.success) {
-        toast.success('Xoá địa chỉ thành công!');
-        refetch();
-      } else {
-        toast.error('Không thể xoá địa chỉ!');
-      }
-    } catch (error: any) {
-      console.error('Lỗi khi xoá địa chỉ:', error);
-      toast.error('Xoá địa chỉ thất bại!');
-    }
-  };
+  //     if (response?.data?.success) {
+  //       toast.success('Xoá địa chỉ thành công!');
+  //       refetch();
+  //     } else {
+  //       toast.error('Không thể xoá địa chỉ!');
+  //     }
+  //   } catch (error: any) {
+  //     console.error('Lỗi khi xoá địa chỉ:', error);
+  //     toast.error('Xoá địa chỉ thất bại!');
+  //   }
+  // };
 
   return (
     <FocusModal open={isOpen} onOpenChange={onClose}>
@@ -135,7 +133,7 @@ const ModalListCustomInfor = ({
         </FocusModal.Header>
         <div className="">
           <div className="max-h-[350px] overflow-y-scroll">
-            {sortedAddresses?.map(address => (
+            {sortedAddresses?.map((address: Address) => (
               <div
                 key={address.id}
                 className="mb-1 justify-start rounded-lg border-b bg-white shadow sm:space-x-0"
@@ -150,7 +148,13 @@ const ModalListCustomInfor = ({
                     <h1 className="mb-2">
                       {address.ward}, {address.district}, {address.city}
                     </h1>
-                    {address.isDefault && <Badge color="red">Mặc Định</Badge>}
+                    {address.isDefault && (
+                      <>
+                        <div className="w-[80px] border-[1px] border-[#ee4d2d] px-2 py-1 text-center text-sm text-[#ee4d2d]">
+                          Mặc định
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="mt-2 flex flex-col items-center">
                     {!address.isDefault && (
