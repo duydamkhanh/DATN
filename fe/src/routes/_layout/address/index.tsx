@@ -1,3 +1,4 @@
+import instance from '@/api/axiosIntance';
 import ModalCreateCustomInfor from '@/components/custom-infor/modal-create-custom-infor';
 import ModalUpdateCustomInfor from '@/components/custom-infor/modal-edit-custom-infor';
 import CustomUser from '@/components/useroder/custom-menu';
@@ -5,7 +6,7 @@ import useCustomerMutation from '@/data/address/useAddressMutation';
 import { useFetchAddress } from '@/data/address/useFetchAddress';
 import { queryClient } from '@/main';
 import { ChevronRightMini, Plus } from '@medusajs/icons';
-import { Badge, Button, usePrompt } from '@medusajs/ui';
+import { Badge, Button, toast, usePrompt } from '@medusajs/ui';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
@@ -16,8 +17,8 @@ export const Route = createFileRoute('/_layout/address/')({
 function Address() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false); // Thêm trạng thái cho modal cập nhật
-  const [userId, setUserId] = useState(null);
-  const [currentAddress, setCurrentAddress] = useState(null);
+  const [userId, setUserId] = useState<string>('');
+  const [currentAddress, setCurrentAddress] = useState<Address>();
   const { createCustomer, deleteCustomer } = useCustomerMutation();
 
   useEffect(() => {
@@ -27,7 +28,7 @@ function Address() {
     }
   }, []);
 
-  const { data, isLoading, error, refetch } = useFetchAddress(userId);
+  const { data, isLoading, refetch } = useFetchAddress(userId);
 
   const openCreateModal = () => {
     setCurrentAddress(null);
@@ -39,7 +40,7 @@ function Address() {
     refetch();
   };
 
-  const openUpdateModal = address => {
+  const openUpdateModal = (address: Address) => {
     setCurrentAddress(address);
     setIsUpdateModalOpen(true);
   };
@@ -62,9 +63,62 @@ function Address() {
     }
   };
 
-  const sortedAddresses = data?.data.sort((a, b) =>
-    a.isDefault ? -1 : b.isDefault ? 1 : 0
+  const sortedAddresses = data?.data.sort(
+    (a: { isDefault: boolean }, b: { isDefault: boolean }) =>
+      a.isDefault ? -1 : b.isDefault ? 1 : 0
   );
+
+  const updateIsDefault = async (addressId: string | undefined) => {
+    if (!addressId) {
+      console.error('Không tìm thấy addressId:', addressId);
+      toast.error('Không tìm thấy addressId!');
+      return;
+    }
+
+    if (!userId) {
+      console.error('Không tìm thấy userId:', userId);
+      toast.error('Không tìm thấy userId!');
+      return;
+    }
+
+    try {
+      const selectedAddress = data?.data.find(
+        (address: { _id: string }) => address._id === addressId
+      );
+      if (!selectedAddress) {
+        toast.error('Địa chỉ không tồn tại!');
+        return;
+      }
+
+      if (selectedAddress.isDefault) {
+        console.log('Địa chỉ đã là mặc định:', addressId);
+        toast.info('Địa chỉ này đã là mặc định!');
+        return;
+      }
+
+      const response = await instance.put(
+        `/editcustomer/${addressId}/${userId}`,
+        {
+          isDefault: true,
+        }
+      );
+
+      if (response?.data?.success) {
+        console.log('Cập nhật thành công cho địa chỉ ID:', addressId);
+        toast.success('Cập nhật địa chỉ mặc định thành công!');
+        refetch();
+      } else {
+        console.error(
+          'Không thể cập nhật địa chỉ mặc định, phản hồi server:',
+          response?.data
+        );
+        toast.error('Không thể cập nhật địa chỉ mặc định!');
+      }
+    } catch (error: any) {
+      console.error('Lỗi khi cập nhật địa chỉ mặc định:', error);
+      toast.error('Cập nhật địa chỉ mặc định thất bại!');
+    }
+  };
 
   return (
     <div className="bg-gray-50">
@@ -109,7 +163,7 @@ function Address() {
             <div>Bạn chưa có địa chỉ nào !</div>
           ) : (
             <div>
-              {sortedAddresses?.map(address => (
+              {sortedAddresses?.map((address: Address) => (
                 <div
                   key={address.id}
                   className="mb-2 justify-start rounded-lg border-b bg-white shadow sm:space-x-0"
@@ -123,21 +177,39 @@ function Address() {
                       <h1 className="mb-2">
                         {address.ward}, {address.district}, {address.city}
                       </h1>
-                      {address.isDefault && <Badge color="red">Mặc Định</Badge>}
+                      {address.isDefault && (
+                        <>
+                          <div className="w-[80px] border-[1px] border-[#ee4d2d] px-2 py-1 text-center text-sm text-[#ee4d2d]">
+                            Mặc định
+                          </div>
+                        </>
+                      )}
                     </div>
                     <div className="mt-2 flex flex-col items-center">
-                      <p
-                        className="cursor-pointer text-blue-400"
-                        onClick={() => openUpdateModal(address)}
-                      >
-                        Cập Nhật
-                      </p>
-                      <p
-                        className="cursor-pointer text-red-500"
-                        onClick={() => deleteEntity(address._id)}
-                      >
-                        Xoá
-                      </p>
+                      <div className="flex gap-2">
+                        <p
+                          className="cursor-pointer text-blue-400"
+                          onClick={() => openUpdateModal(address)}
+                        >
+                          Cập Nhật
+                        </p>
+                        <p
+                          className="cursor-pointer text-red-500"
+                          onClick={() => deleteEntity(address._id)}
+                        >
+                          Xoá
+                        </p>
+                      </div>
+                      <div className="mt-2 flex flex-col items-center">
+                        {!address.isDefault && (
+                          <p
+                            className="mt-3 cursor-pointer border p-2 text-black"
+                            onClick={() => updateIsDefault(address._id)}
+                          >
+                            Thiết Lập Là Mặc Định
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
