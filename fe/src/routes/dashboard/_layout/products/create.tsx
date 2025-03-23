@@ -1,5 +1,4 @@
 import instance from '@/api/axiosIntance';
-import Header from '@/components/layoutAdmin/header/header';
 import NewHeader from '@/components/layoutAdmin/header/new-header';
 import TextareaDescription from '@/components/textarea';
 import useProductMutation from '@/data/products/useProductMutation';
@@ -20,10 +19,10 @@ export const Route = createFileRoute('/dashboard/_layout/products/create')({
     const response = await instance.get('categories');
     return response.data as Category[];
   },
-  component: AddBrand,
+  component: AddProduct,
 });
 
-function AddBrand() {
+function AddProduct() {
   const navigate = useNavigate();
   const [Loading, setIsLoading] = useState(false);
   const categories = Route.useLoaderData();
@@ -48,15 +47,19 @@ function AddBrand() {
     variants: Variant[];
   }>({
     defaultValues: {
-      variants: [{ size: '', color: '', price: 0, countInStock: 0 }],
+      variants: [
+        { size: '', color: '', price: 0, countInStock: 0, imageVariant: '' },
+      ],
     },
   });
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<File | null>(null);
   const [selectedGallery, setSelectedGallery] = useState<File[] | []>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInput2Ref = useRef<HTMLInputElement>(null);
+  const fileInput3Ref = useRef<HTMLInputElement>(null);
 
   const { createProduct } = useProductMutation();
 
@@ -67,33 +70,25 @@ function AddBrand() {
 
     if (e.target.files && e.target.files.length > 0) {
       for (let file of e.target.files) {
-        // Kiểm tra dung lượng file
         if (file.size > maxSize) {
-          errorMessage += `File ${file.name} quá lớn, vui lòng chọn file nhỏ hơn 500KB.\n`; // Thêm thông báo vào chuỗi lỗi
-        }
-        // Kiểm tra định dạng file
-        else if (!['image/jpeg', 'image/png'].includes(file.type)) {
-          errorMessage += `File ${file.name} không phải định dạng .jpg hoặc .png.\n`; // Thêm thông báo vào chuỗi lỗi
+          errorMessage += `File ${file.name} quá lớn, vui lòng chọn file nhỏ hơn 500KB.\n`;
+        } else if (!['image/jpeg', 'image/png'].includes(file.type)) {
+          errorMessage += `File ${file.name} không phải định dạng .jpg hoặc .png.\n`;
         } else {
-          // Nếu file hợp lệ, thêm vào danh sách
           selectedGallery.push(file);
         }
       }
 
-      // Nếu có lỗi, hiển thị thông báo lỗi Toast
       if (errorMessage) {
-        toast.error(errorMessage); // Hiển thị tất cả các thông báo lỗi
+        toast.error(errorMessage);
       }
 
-      // Kiểm tra nếu không có file hợp lệ trong selectedGallery
       if (selectedGallery.length === 0) {
         toast.error('Vui lòng chọn ít nhất một ảnh hợp lệ.');
       } else {
-        // Nếu có file hợp lệ, cập nhật state
         setSelectedGallery(prev => [...prev, ...selectedGallery]);
       }
     } else {
-      // Nếu không có file nào được chọn
       toast.error('Vui lòng chọn ít nhất một file.');
     }
   };
@@ -103,10 +98,22 @@ function AddBrand() {
       setSelectedImage(files[0]);
     }
   };
+  const handleVariantChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const imageVariant = e.target.files;
+    if (imageVariant && imageVariant.length > 0) {
+      setSelectedVariant(imageVariant[0]);
+    }
+  };
 
   const handleClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const handle2Click = () => {
+    if (fileInput3Ref.current) {
+      fileInput3Ref.current.click();
     }
   };
 
@@ -135,7 +142,6 @@ function AddBrand() {
     const uniqueVariants = new Set();
     for (const variant of data.variants) {
       const key = `${variant.color}-${variant.size}`;
-
       if (uniqueVariants.has(key)) {
         toast.error('Duplicate variant detected: color must be unique.');
         return;
@@ -143,7 +149,6 @@ function AddBrand() {
       uniqueVariants.add(key);
     }
 
-    // Nếu không trùng, thực hiện submit
     if (!selectedImage) return;
 
     const formDataThumbnail = new FormData();
@@ -152,47 +157,79 @@ function AddBrand() {
     for (let file of selectedGallery) {
       formDataGallery.append('photos', file);
     }
+
     setIsLoading(true);
     try {
+      // Upload ảnh chính & ảnh gallery
       const [responseThumbnail, responseGallery] = await Promise.all([
-        await axios.post(
+        axios.post(
           `http://localhost:8080/api/upload-thumbnail-product`,
           formDataThumbnail
         ),
-        await axios.post(
+        axios.post(
           `http://localhost:8080/api/upload-gallery-product`,
           formDataGallery
         ),
       ]);
-      if (responseThumbnail?.data && responseGallery.data) {
-        createProduct.mutate(
-          {
-            ...data,
-            image: responseThumbnail.data,
-            gallery: responseGallery.data,
-          },
-          {
-            onSuccess: () => {
-              setIsLoading(false);
-            },
-            onError: error => {
-              setIsLoading(false);
-              toast.error(`Cập nhật trạng thái thất bại: ${error.message}`);
-            },
+
+      // Upload từng ảnh biến thể nếu có
+      const uploadedVariants = await Promise.all(
+        data.variants.map(async variant => {
+          console.log('Checking variant:', variant);
+
+          if (variant.imageVariant instanceof File) {
+            console.log('Uploading variant image:', variant.imageVariant);
+
+            const formDataVariant = new FormData();
+            formDataVariant.append('variant', variant.imageVariant);
+
+            const response = await axios.post(
+              `http://localhost:8080/api/upload-variant-product`,
+              formDataVariant
+            );
+
+            console.log('Uploaded variant image:', response.data);
+
+            return { ...variant, imageVariant: response.data };
           }
-        );
-        reset();
-      }
+
+          console.log('Skipping variant without image');
+          return variant; // Nếu không có ảnh thì giữ nguyên
+        })
+      );
+
+      // Gửi dữ liệu sản phẩm lên server
+      createProduct.mutate(
+        {
+          ...data,
+          image: responseThumbnail.data,
+          gallery: responseGallery.data,
+          variants: uploadedVariants, // Cập nhật biến thể với ảnh đã upload
+        },
+        {
+          onSuccess: () => {
+            setIsLoading(false);
+            reset();
+          },
+          onError: error => {
+            setIsLoading(false);
+            toast.error(`Cập nhật trạng thái thất bại: ${error.message}`);
+          },
+        }
+      );
     } catch (error) {
-      throw new Error('Failed to upload image');
+      setIsLoading(false);
+      toast.error('Failed to upload image');
     }
   };
 
-  // Để cập nhật giá trị khi nội dung thay đổi
-  const handleEditorChange = content => {
+  const handleEditorChange = (content: string) => {
     setValue('detaildescription', content);
     trigger('detaildescription');
   };
+
+  console.log('selectedGallery', selectedGallery);
+
   return (
     <div className="h-screen overflow-y-auto">
       {Loading && (
@@ -299,10 +336,15 @@ function AddBrand() {
                   <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-ui-bg-subtle-hover px-2 py-3">
                     <div>
                       <p className="text-sm font-normal text-ui-fg-base">
-                        {selectedImage.name}
+                        <img
+                          src={URL.createObjectURL(selectedImage)}
+                          alt="Ảnh sản phẩm"
+                          className="h-10 w-10 rounded-lg object-cover"
+                        />
                       </p>
                       <p className="text-xs font-normal text-ui-fg-subtle">
-                        {formatFileSize(selectedImage.size)}
+                        {formatFileSize(selectedImage.size)},{' '}
+                        {selectedImage.name}
                       </p>
                     </div>
                     <XMark
@@ -418,12 +460,16 @@ function AddBrand() {
                 {selectedGallery.length > 0 &&
                   selectedGallery.map(item => (
                     <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-ui-bg-subtle-hover px-2 py-3">
-                      <div>
+                      <div className="">
                         <p className="text-sm font-normal text-ui-fg-base">
-                          {item.name}
+                          <img
+                            src={URL.createObjectURL(item)}
+                            alt="Ảnh sản phẩm"
+                            className="h-10 w-10 rounded-lg object-cover"
+                          />
                         </p>
                         <p className="text-xs font-normal text-ui-fg-subtle">
-                          {formatFileSize(item.size)}
+                          {formatFileSize(item.size)}, {item.name}
                         </p>
                       </div>
                       <XMark
@@ -452,7 +498,7 @@ function AddBrand() {
                       <TextareaDescription
                         apiKey="vx5npguuuktlxhbv9tv6vvgjk1x5astnj8kznhujei9w6ech"
                         value={value}
-                        onChange={content =>
+                        onChange={(content: string) =>
                           handleEditorChange(content, onChange)
                         }
                         className="h-full w-full" // To make the text area take full space
@@ -468,6 +514,7 @@ function AddBrand() {
               </div>
             </div>
             {/* Variants */}
+
             <div>
               <h2 className="mt-5 text-lg font-medium text-ui-fg-base">
                 Biến thể
@@ -482,30 +529,83 @@ function AddBrand() {
                       <Input
                         placeholder="e.g., M"
                         size="base"
-                        {...register(`variants.${index}.size` as const, {
+                        {...register(`variants.${index}.size`, {
                           required: 'Kích thước là bắt buộc',
-                          validate: value => {
-                            const variants = watch('variants');
-                            const isDuplicate = variants.some(
-                              (variant, i) =>
-                                i !== index &&
-                                variant.color.trim().toLowerCase() ===
-                                  value.trim().toLowerCase() &&
-                                variant.size.trim().toLowerCase() ===
-                                  variants[index].size.trim().toLowerCase()
-                            );
-                            return isDuplicate
-                              ? 'Kích thước đã tồn tại.'
-                              : true;
-                          },
                         })}
                       />
-
                       {errors.variants?.[index]?.size && (
                         <span className="text-xs text-red-500">
                           {errors.variants[index].size.message}
                         </span>
                       )}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-ui-fg-base">
+                        <span className="text-ui-tag-red-text">*</span> Ảnh biến
+                        thể
+                      </label>
+                      <button
+                        type="button"
+                        className="mt-2 flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-ui-border-strong"
+                        onClick={handle2Click}
+                      >
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor={`upload-${index}`}
+                            className="flex cursor-pointer items-center rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:border-blue-500 hover:bg-blue-50"
+                          >
+                            <ArrowDownTray className="mr-2 h-5 w-5 text-gray-500" />
+                            <span>Tải lên ảnh</span>
+                          </label>
+                          <input
+                            id={`upload-${index}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setValue(
+                                  `variants.${index}.imageVariant`,
+                                  file
+                                ); // Cập nhật vào form
+                              }
+                            }}
+                          />
+                          {watch(`variants.${index}.imageVariant`) && (
+                            <img
+                              src={URL.createObjectURL(
+                                watch(`variants.${index}.imageVariant`)
+                              )}
+                              alt="Preview"
+                              className="h-12 w-12 rounded-lg object-cover shadow-md"
+                            />
+                          )}
+                        </div>
+                      </button>
+                      <div className="mt-5">
+                        {selectedVariant && (
+                          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-ui-bg-subtle-hover px-2 py-3">
+                            <div>
+                              <p className="text-sm font-normal text-ui-fg-base">
+                                <img
+                                  src={URL.createObjectURL(selectedVariant)}
+                                  alt="Ảnh sản phẩm"
+                                  className="h-10 w-10 rounded-lg object-cover"
+                                />
+                              </p>
+                              <p className="text-xs font-normal text-ui-fg-subtle">
+                                {formatFileSize(selectedVariant.size)},{' '}
+                                {selectedVariant.name}
+                              </p>
+                            </div>
+                            <XMark
+                              className="cursor-pointer"
+                              onClick={() => setSelectedVariant(null)}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-1 space-y-3">
                       <label className="text-sm font-medium text-ui-fg-base">
@@ -514,23 +614,10 @@ function AddBrand() {
                       <Input
                         placeholder="e.g., Red"
                         size="base"
-                        {...register(`variants.${index}.color` as const, {
+                        {...register(`variants.${index}.color`, {
                           required: 'Màu là bắt buộc',
-                          validate: value => {
-                            const variants = watch('variants');
-                            const isDuplicate = variants.some(
-                              (variant, i) =>
-                                i !== index &&
-                                variant.color.trim().toLowerCase() ===
-                                  value.trim().toLowerCase() &&
-                                variant.size.trim().toLowerCase() ===
-                                  variants[index].size.trim().toLowerCase()
-                            );
-                            return isDuplicate ? 'màu sắc đã tồn tại.' : true;
-                          },
                         })}
                       />
-
                       {errors.variants?.[index]?.color && (
                         <span className="text-xs text-red-500">
                           {errors.variants[index].color.message}
@@ -546,7 +633,7 @@ function AddBrand() {
                         type="number"
                         placeholder="e.g., 199.99"
                         size="base"
-                        {...register(`variants.${index}.price` as const, {
+                        {...register(`variants.${index}.price`, {
                           required: 'Giá phải bắt buộc',
                           min: { value: 0, message: 'Giá phải lớn hơn 0' },
                         })}
@@ -560,22 +647,15 @@ function AddBrand() {
                     <div className="flex-1 space-y-3">
                       <label className="text-sm font-medium text-ui-fg-base">
                         <span className="text-ui-tag-red-text">*</span> Số lượng
-                        trong kho
                       </label>
                       <Input
                         type="number"
                         placeholder="e.g., 100"
                         size="base"
-                        {...register(
-                          `variants.${index}.countInStock` as const,
-                          {
-                            required: 'Số lượng trong kho cần bắt buộc ',
-                            min: {
-                              value: 0,
-                              message: 'CountInStock must be positive',
-                            },
-                          }
-                        )}
+                        {...register(`variants.${index}.countInStock`, {
+                          required: 'Số lượng trong kho là bắt buộc',
+                          min: { value: 0, message: 'Số lượng phải lớn hơn 0' },
+                        })}
                       />
                       {errors.variants?.[index]?.countInStock && (
                         <span className="text-xs text-red-500">
@@ -606,33 +686,29 @@ function AddBrand() {
                         </span>
                       )}
                     </div>
-                    {/* <div className="flex-1 space-y-3">
-                      <label className=" text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> SKU
-                      </label>
-                      <Input
-                        placeholder="e.g., SKU123"
-                        size="base"
-                        {...register(`variants.${index}.sku` as const)}
-                      />
-                    </div> */}
                     <Trash
                       className="mt-9 cursor-pointer text-red-500"
                       onClick={() => remove(index)}
                     />
                   </div>
                 ))}
+
                 <Button
                   variant="secondary"
-                  onClick={() =>
-                    append({
-                      size: '',
-                      color: '',
-                      price: 0,
-                      countInStock: 0,
-                      sku: '',
-                    })
-                  }
+                  onClick={() => {
+                    const currentVariants = watch('variants') || [];
+                    setValue('variants', [
+                      ...currentVariants,
+                      {
+                        size: '',
+                        color: '',
+                        price: 0,
+                        countInStock: 0,
+                        weight: 0,
+                        sku: '',
+                      },
+                    ]);
+                  }}
                 >
                   <PlusMini /> Thêm biến thể
                 </Button>
@@ -645,4 +721,4 @@ function AddBrand() {
   );
 }
 
-export default AddBrand;
+export default AddProduct;

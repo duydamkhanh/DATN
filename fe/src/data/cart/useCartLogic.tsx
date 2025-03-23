@@ -2,6 +2,7 @@ import { useState } from 'react';
 import useCartMutation from '@/data/cart/useCartMutation';
 import { useFetchCart } from '@/data/cart/useFetchCart';
 import { toast, usePrompt } from '@medusajs/ui';
+import { useFetchProductAll } from '@/data/products/useProductList';
 
 export function useCart(userId: string | null) {
   const { data: cartData, isLoading } = useFetchCart(userId || '');
@@ -17,6 +18,8 @@ export function useCart(userId: string | null) {
     Record<number, boolean>
   >({});
   const [selectAll, setSelectAll] = useState(false);
+
+  const { listProduct } = useFetchProductAll();
 
   const handleQuantityChange = (index: number, value: string) => {
     const quantity = Math.max(parseInt(value) || 0, 0);
@@ -107,15 +110,24 @@ export function useCart(userId: string | null) {
       [index]: newQuantity,
     }));
 
-    if (product && newQuantity >= 0) {
+    if (product) {
       try {
-        await decreaseQuantity.mutateAsync({
-          userId: userId || '',
-          productId: product.productId,
-          variantId: product.variantId,
-          confirm: true,
-        });
-        toast.success('Đã xoá sản phẩm khỏi giỏ hàng!');
+        if (newQuantity === 0) {
+          await decreaseQuantity.mutateAsync({
+            userId: userId || '',
+            productId: product.productId,
+            variantId: product.variantId,
+            confirm: true,
+          });
+          toast.success('Đã xoá sản phẩm khỏi giỏ hàng!');
+        } else if (newQuantity > 0) {
+          await decreaseQuantity.mutateAsync({
+            userId: userId || '',
+            productId: product.productId,
+            variantId: product.variantId,
+            confirm: false,
+          });
+        }
       } catch (error) {
         toast.error('Có lỗi xảy ra khi giảm số lượng sản phẩm.');
       }
@@ -277,5 +289,6 @@ export function useCart(userId: string | null) {
     totalSelectedPrice,
     getSelectedItems,
     getAllItems,
+    listProduct,
   };
 }

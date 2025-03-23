@@ -169,13 +169,12 @@ const Header = () => {
         <div className="container mt-[-10px] px-[55px]">
           <div className="header-desk header-desk_type_1">
             <div className="logo">
-            <a href="/">
+              <a href="/">
                 <img
                   src="/baya.png"
                   alt="Uomo"
                   className="logo__image d-block w-20"
                 />
-              </a>
               </a>
             </div>
             {/* /.logo */}
@@ -495,32 +494,80 @@ const Header = () => {
                     </p>
                     <div className="d-flex align-items-center justify-content-between mt-1">
                       <div className="qty-control position-relative">
-                        <input
-                          type="number"
-                          min={1}
-                          value={quantities[index] ?? product.quantity}
-                          onChange={e => {
-                            const value = Number(e.target.value);
-                            if (value >= 1) {
-                              handleQuantityChange(index, value);
-                            }
-                          }}
-                          className="qty-control__number border-0 text-center"
-                        />
-                        <div
-                          className="qty-control__reduce text-start"
-                          onClick={() => decrementQuantity(index)}
-                        >
-                          -
-                        </div>
-                        <div
-                          className="qty-control__increase text-end"
-                          onClick={() => incrementQuantity(index)}
-                        >
-                          +
-                        </div>
-                      </div>
+                        {(() => {
+                          // Lấy số lượng tồn kho của sản phẩm
+                          const countInStock =
+                            listProduct
+                              ?.find(p =>
+                                p.variants?.some(
+                                  v => v.sku === product.variantId
+                                )
+                              )
+                              ?.variants.find(v => v.sku === product.variantId)
+                              ?.countInStock ?? 0;
 
+                          // Lấy số lượng hiện tại của sản phẩm trong giỏ hàng
+                          const currentQuantity =
+                            quantities[index] ?? product.quantity;
+
+                          return (
+                            <>
+                              <input
+                                type="number"
+                                name="quantity"
+                                value={currentQuantity}
+                                onChange={e => {
+                                  let value = Number(e.target.value);
+
+                                  // Kiểm tra giới hạn số lượng
+                                  if (value > countInStock) {
+                                    value = countInStock;
+                                  } else if (value < 1) {
+                                    value = 1;
+                                  }
+
+                                  handleQuantityChange(index, value);
+                                }}
+                                min={1}
+                                max={countInStock}
+                                className="qty-control__number border-0 text-center"
+                              />
+
+                              <div
+                                className="qty-control__reduce text-start"
+                                onClick={() =>
+                                  currentQuantity > 1 &&
+                                  decrementQuantity(index)
+                                }
+                                style={{
+                                  opacity: currentQuantity > 1 ? 1 : 0.5,
+                                  pointerEvents:
+                                    currentQuantity > 1 ? 'auto' : 'none',
+                                }}
+                              >
+                                -
+                              </div>
+                              <div
+                                className="qty-control__increase text-end"
+                                onClick={() =>
+                                  currentQuantity < countInStock &&
+                                  incrementQuantity(index)
+                                }
+                                style={{
+                                  opacity:
+                                    currentQuantity < countInStock ? 1 : 0.5,
+                                  pointerEvents:
+                                    currentQuantity < countInStock
+                                      ? 'auto'
+                                      : 'none',
+                                }}
+                              >
+                                +
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
                       {/* .qty-control */}
                       <span className="cart-drawer-item__price money price">
                         <CurrencyVND

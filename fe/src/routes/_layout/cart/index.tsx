@@ -156,21 +156,28 @@ function Cart() {
 
                           return (
                             <>
-                              <div className="qty-control position-relative">
+                              <div className="qty-control position-relative border">
                                 <input
                                   type="number"
                                   name="quantity"
                                   value={currentQuantity}
-                                  onChange={e =>
-                                    handleQuantityChange(
-                                      index,
-                                      Number(e.target.value)
-                                    )
-                                  }
+                                  onChange={e => {
+                                    let value = Number(e.target.value);
+
+                                    // Kiểm tra giới hạn số lượng
+                                    if (value > countInStock) {
+                                      value = countInStock;
+                                    } else if (value < 1) {
+                                      value = 1;
+                                    }
+
+                                    handleQuantityChange(index, value);
+                                  }}
                                   min={1}
                                   max={countInStock}
-                                  className="qty-control__number text-center"
+                                  className="qty-control__number border-0 text-center"
                                 />
+
                                 <div
                                   className="qty-control__reduce"
                                   onClick={() =>

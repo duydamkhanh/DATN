@@ -1,4 +1,3 @@
-import Header from '@/components/layoutAdmin/header/header';
 import useProductMutation from '@/data/products/useProductMutation';
 import { Button, Input, Select, Textarea, toast } from '@medusajs/ui';
 import {
@@ -75,22 +74,51 @@ function EditProduct() {
   });
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<File | null>(null);
   const [selectedGallery, setSelectedGallery] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileInput2Ref = useRef<HTMLInputElement>(null);
+  const fileInput3Ref = useRef<HTMLInputElement>(null);
 
   const { editProduct } = useProductMutation();
-  console.log('edit', editProduct); // Thêm dòng này trước khi gọi mutation
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variants',
   });
 
+  const getImagePreview = imageVariant => {
+    if (!imageVariant) return ''; // Nếu không có ảnh, trả về chuỗi rỗng
+    if (imageVariant instanceof File) return URL.createObjectURL(imageVariant); // Nếu là File, tạo URL
+    if (typeof imageVariant === 'string' && imageVariant.startsWith('http'))
+      return imageVariant; // Nếu là URL hợp lệ từ API, giữ nguyên
+    return ''; // Trả về chuỗi rỗng nếu giá trị không hợp lệ
+  };
+
+  useEffect(() => {
+    const variants = watch('variants') || [];
+    const newPreviews = {};
+
+    variants.forEach((variant, index) => {
+      newPreviews[index] = getImagePreview(variant?.imageVariant);
+    });
+
+    setImagePreviews(newPreviews);
+
+    // 🛑 Xóa ObjectURL để tránh rò rỉ bộ nhớ
+    return () => {
+      Object.values(newPreviews).forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [watch('variants')]);
+
   useEffect(() => {
     if (product) {
-      console.log('Setting form values:', product);
       reset({
         _id: product._id,
         name: product.name,
@@ -108,6 +136,11 @@ function EditProduct() {
           countInStock: variant.countInStock,
           sku: variant.sku,
           weight: variant.weight,
+          imageVariant:
+            typeof variant.imageVariant === 'string' ||
+            variant.imageVariant instanceof File
+              ? variant.imageVariant
+              : '', // Nếu không phải string hoặc File, đặt rỗng tránh lỗi
         })),
       });
     }
@@ -133,6 +166,11 @@ function EditProduct() {
   const handleClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+  const handle2Click = () => {
+    if (fileInput3Ref.current) {
+      fileInput3Ref.current.click();
     }
   };
 
@@ -209,11 +247,38 @@ function EditProduct() {
           : Promise.resolve({ data: data.gallery }), // Nếu không tải lên gallery mới, giữ gallery hiện tại
       ]);
 
+      // Upload từng ảnh biến thể nếu có
+      const uploadedVariants = await Promise.all(
+        data.variants.map(async variant => {
+          console.log('Checking variant:', variant);
+
+          if (variant.imageVariant instanceof File) {
+            console.log('Uploading variant image:', variant.imageVariant);
+
+            const formDataVariant = new FormData();
+            formDataVariant.append('variant', variant.imageVariant);
+
+            const response = await axios.post(
+              `http://localhost:8080/api/upload-variant-product`,
+              formDataVariant
+            );
+
+            console.log('Uploaded variant image:', response.data);
+
+            return { ...variant, imageVariant: response.data };
+          }
+
+          console.log('Skipping variant without image');
+          return variant; // Nếu không có ảnh thì giữ nguyên
+        })
+      );
+
       if (responseThumbnail?.data && responseGallery.data) {
         editProduct.mutate({
           ...data,
           image: responseThumbnail.data,
           gallery: responseGallery.data,
+          variants: uploadedVariants,
           totalCountInStock: totalCountInStock,
         });
 
@@ -227,11 +292,12 @@ function EditProduct() {
     }
   };
   // Để cập nhật giá trị khi nội dung thay đổi
-  const handleEditorChange = content => {
+  const handleEditorChange = (content: string) => {
     setValue('detaildescription', content);
   };
+
   return (
-    <div className="h-screen overflow-y-auto">
+    <div className="h-screen">
       <div className="fixed left-0 right-0 top-16 z-10 md:relative md:left-auto md:right-auto md:top-0">
         <NewHeader
           breadcrumbs={[
@@ -347,7 +413,6 @@ function EditProduct() {
                         alt={product.name}
                         className="h-10 w-10 object-cover"
                       />
-                      {/* <p className="text-sm font-normal text-ui-fg-base">{product.image}</p> */}
                     </div>
                     <XMark
                       className="cursor-pointer"
@@ -504,7 +569,6 @@ function EditProduct() {
                             alt="Gallery Image"
                             className="h-10 w-10 object-cover"
                           />
-                          {/* <p className="text-sm font-normal text-ui-fg-base">{imgUrl}</p> */}
                         </div>
                         <XMark
                           className="cursor-pointer"
@@ -590,6 +654,66 @@ function EditProduct() {
                           {errors.variants[index].size.message}
                         </span>
                       )}
+                    </div>
+                    <div className="mt-6">
+                      <label className="pt-1 text-sm font-medium text-ui-fg-base">
+                        <span className="text-ui-tag-red-text">*</span> Ảnh biến
+                        thể
+                      </label>
+
+                      <div className="mt-4 flex items-center gap-3">
+                        {/* Nút tải ảnh */}
+                        <label
+                          htmlFor={`upload-${index}`}
+                          className="mt-3 flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 px-2 py-1 text-gray-600 transition-all hover:border-blue-500 hover:bg-blue-50"
+                        >
+                          <ArrowDownTray className="h-6 w-6 text-gray-500" />
+                          <span className="text-sm font-medium">
+                            Tải lên ảnh
+                          </span>
+                        </label>
+
+                        {/* Input ẩn để chọn ảnh */}
+                        <input
+                          id={`upload-${index}`}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              setValue(`variants.${index}.imageVariant`, file); // Lưu file vào form
+                            }
+                          }}
+                        />
+
+                        {/* Hiển thị ảnh preview nếu có */}
+                        {(() => {
+                          const imageValue = watch(
+                            `variants.${index}.imageVariant`
+                          );
+                          console.log(
+                            `Variant ${index} - imageVariant:`,
+                            imageValue
+                          );
+
+                          if (!imageValue) return null; // Không hiển thị nếu chưa có ảnh
+
+                          return (
+                            <div className="relative">
+                              <img
+                                src={
+                                  typeof imageValue === 'string'
+                                    ? imageValue
+                                    : URL.createObjectURL(imageValue)
+                                }
+                                alt="Preview"
+                                className="mt-2 h-10 w-14 rounded-lg object-cover"
+                              />
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     {/* Color Input */}
@@ -677,7 +801,7 @@ function EditProduct() {
                       />
                     </div>
                     <Trash
-                      className="mt-9 cursor-pointer text-red-500"
+                      className="mt-24 cursor-pointer text-red-500"
                       onClick={() => remove(index)}
                     />
                   </div>
@@ -691,6 +815,7 @@ function EditProduct() {
                       price: 0,
                       countInStock: 0,
                       sku: '',
+                      imageVariant: '',
                     })
                   }
                 >

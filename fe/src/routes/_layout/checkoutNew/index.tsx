@@ -1,16 +1,17 @@
+import instance from '@/api/axiosIntance';
 import CurrencyVND from '@/components/config/vnd';
 import ModalCreateCustomInfor from '@/components/custom-infor/modal-create-custom-infor';
 import { useFetchAddressById } from '@/data/address/useFetchAddressByid';
 import useCartMutation from '@/data/cart/useCartMutation';
-import useCheckoutMutation from '@/data/oder/useOderMutation';
 import { useFetchAvailableCoupons } from '@/data/coupon/useCouponList';
-import instance from '@/api/axiosIntance';
-import { Badge, toast } from '@medusajs/ui';
+import useCheckoutMutation from '@/data/oder/useOderMutation';
 import { ListBullet, MapPin } from '@medusajs/icons';
+import { toast } from '@medusajs/ui';
 import { createFileRoute, useLocation } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import VoucherModal from '@/components/VoucherModal';
+// import VoucherModal from '@/components/VoucherModal';
 import ModalListCustomInfor from '@/components/custom-infor/modal-address-list';
+import { useCart } from '@/data/cart/useCartLogic';
 
 export const Route = createFileRoute('/_layout/checkoutNew/')({
   component: NewCheckout,
@@ -35,10 +36,24 @@ function NewCheckout() {
     ? location.state.selectedItems
     : [];
 
-  const totalQuantity = selectedItems.reduce(
-    (acc, item) => acc + item.quantity,
-    0
-  );
+  const { listProduct } = useCart(userId);
+
+  const getImageSrc = variantId => {
+    // Tìm sản phẩm chứa biến thể có sku trùng với variantId
+    const productWithVariant = listProduct.find(product =>
+      product.variants?.some(
+        variant => String(variant.sku) === String(variantId)
+      )
+    );
+
+    // Tìm chính xác biến thể trong sản phẩm đó
+    const matchedVariant = productWithVariant?.variants?.find(
+      variant => String(variant.sku) === String(variantId)
+    );
+
+    return matchedVariant?.imageVariant || 'path_to_default_image.jpg';
+  };
+
   const totalAmount = selectedItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0
@@ -151,7 +166,7 @@ function NewCheckout() {
         name: item.name,
         price: item.price,
         quantity: item.quantity,
-        image: item.image,
+        image: getImageSrc(item.variantId),
         color: item.color,
         size: item.size,
       })),
@@ -197,17 +212,25 @@ function NewCheckout() {
           <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="col-span-2 space-y-4">
               <h1 className="text-xl font-semibold">Đơn hàng của tôi</h1>
-              <div className="rounded bg-white p-4 shadow">
+              <div
+                className="relative rounded border-t-4 border-transparent bg-white p-4 shadow"
+                style={{
+                  borderTop: '3px solid transparent',
+                  borderImage:
+                    'repeating-linear-gradient(72deg, #6FA6D6 0 40px, transparent 40px 50px, #F18D9B 50px 90px, transparent 90px 100px) 10',
+                  borderImageSlice: 1,
+                }}
+              >
                 <div className="flex items-center justify-between">
-                  <h2 className="flex gap-2 text-lg font-medium text-orange-500">
-                    <p className="mt-1 text-orange-500">
+                  <h2 className="flex gap-2 text-lg font-medium text-[#ee4d2d]">
+                    <p className="mt-1 text-[#ee4d2d]">
                       <MapPin />
-                    </p>{' '}
+                    </p>
                     Địa chỉ nhận hàng
                   </h2>
                   <button
                     type="button"
-                    className="text-sm text-blue-500"
+                    className="text-sm text-[#6FA6D6]"
                     onClick={openListModal}
                   >
                     Thay đổi
@@ -215,7 +238,7 @@ function NewCheckout() {
                 </div>
                 <div className="mt-2 text-sm">
                   {data?.data ? (
-                    <>
+                    <div>
                       <p>
                         <strong>Họ tên:</strong> {data?.data.name}
                       </p>
@@ -223,16 +246,19 @@ function NewCheckout() {
                         <strong>Số điện thoại:</strong> {data?.data.phone}
                       </p>
                       <p>
-                        <strong>Địa chỉ:</strong> {data?.data.address},
-                        {data?.data.ward}, {data?.data.district},
+                        <strong>Địa chỉ:</strong> {data?.data.address},{' '}
+                        {data?.data.ward}, {data?.data.district},{' '}
                         {data?.data.city}
                       </p>
-                      <Badge className="mt-3" color="red">
-                        Mặc Định
-                      </Badge>
-                    </>
+                      <div className="mt-2 w-[80px] border-[1px] border-[#ee4d2d] py-0.5 text-center text-[15px] text-[#ee4d2d]">
+                        Mặc định
+                      </div>
+                    </div>
                   ) : (
-                    <p className="cursor-pointer" onClick={openCreateModal}>
+                    <p
+                      className="cursor-pointer text-[#F18D9B]"
+                      onClick={openCreateModal}
+                    >
                       Thêm địa chỉ
                     </p>
                   )}
@@ -255,7 +281,7 @@ function NewCheckout() {
                     key={product.productId}
                   >
                     <img
-                      src={product.image}
+                      src={getImageSrc(product.variantId)}
                       alt={product.name}
                       className="h-16 w-16 rounded object-cover"
                     />
@@ -274,8 +300,8 @@ function NewCheckout() {
                   </div>
                 ))}
                 <div className="text-right font-medium">
-                  Tổng số tiền ({totalQuantity} sản phẩm):{' '}
-                  <span className="text-red-500">
+                  Tổng số tiền ({selectedItems.length} sản phẩm):{' '}
+                  <span className="text-[#ee4d2d]">
                     <CurrencyVND amount={totalAmount} />
                   </span>
                 </div>
@@ -310,7 +336,7 @@ function NewCheckout() {
                   </div>
                   <div className="flex justify-between font-medium">
                     <span>Tổng thanh toán:</span>
-                    <span className="text-red-500">
+                    <span className="text-[#ee4d2d]">
                       <CurrencyVND
                         amount={
                           totalAmount - discountAmount + calculatedShippingFee
@@ -329,7 +355,7 @@ function NewCheckout() {
                     className="flex-grow rounded-l border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Nhập mã giảm giá"
                     value={selectedCoupon?.code || null}
-                  ></input>
+                  />
                   <button
                     type="button"
                     className="hover:bg-gray-700-600 rounded-r bg-black px-4 text-white"
@@ -337,7 +363,7 @@ function NewCheckout() {
                   >
                     Áp dụng
                   </button>
-                  <VoucherModal
+                  {/* <VoucherModal
                     isOpen={isVoucherModalOpen}
                     onClose={() => setVoucherModalOpen(false)}
                     onApplyCoupon={coupon => {
@@ -348,7 +374,7 @@ function NewCheckout() {
                     totalAmount={totalAmount}
                     userId={userId}
                     code={selectedCoupon?.code || null}
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -361,7 +387,7 @@ function NewCheckout() {
               </div>
 
               <div className="rounded bg-white p-4 shadow">
-                <p className="mb-3 font-medium text-gray-700">
+                <p className="mb-3 text-lg font-medium">
                   Phương thức thanh toán
                 </p>
                 <div className="space-y-3">
@@ -389,7 +415,7 @@ function NewCheckout() {
 
                 <p className="mt-3 text-sm text-gray-500">
                   Nhấn "Đặt hàng" đồng nghĩa với việc bạn đồng ý tuân theo Điều
-                  khoản của FASHIONZONE
+                  khoản của BAYA
                 </p>
                 <button
                   type="submit"
