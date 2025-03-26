@@ -13,14 +13,16 @@ export interface User {
 }
 
 // Hàm fetch users từ API
-export const fetchUsers = async () => {
+export const fetchUsers = async (page = 1, limit = 10) => {
   try {
-    console.log('Fetching users...'); // Log để kiểm tra request
-    const res = await instance.get<{ data: User[] }>('/users');
 
-    console.log('Response from server:', res); // Log chi tiết response từ server
+    const res = await instance.get<{ users: User[]; pagination: any }>(
+      `/users?page=${page}&limit=${limit}`
+    );
 
-    if (res.status !== 200 && res.status !== 201) {
+    console.log('Response from server:', res.data);
+
+    if (res.status !== 200) {
       console.error('Unexpected status code:', res.status, res.statusText);
       throw new Error(`Error while fetching users - status code: ${res.status}`);
     }
@@ -36,13 +38,16 @@ export const fetchUsers = async () => {
   }
 };
 
+
 // Hook `useFetchUsers` sử dụng `useQuery` để gọi API
-export const useFetchUsers = () => {
+export const useFetchUsers = ({ page, limit }: { page: number; limit: number }) => {
   return useQuery({
-    queryKey: [QUERY_KEY.FETCH_USERS],
-    queryFn: fetchUsers,
+    queryKey: [QUERY_KEY.FETCH_USERS, page, limit], // Gồm cả page & limit
+    queryFn: () => fetchUsers(page, limit), // Truyền tham số vào hàm fetch
+    keepPreviousData: true, // Giữ dữ liệu cũ khi chuyển trang
   });
 };
+;
 
 // Hook để lấy tất cả users (không sử dụng `useQuery`)
 export const useFetchAllUsers = () => {
