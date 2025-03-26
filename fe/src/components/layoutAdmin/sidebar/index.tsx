@@ -6,6 +6,7 @@ import {
   Pencil,
   ReceiptPercent,
   Tag,
+  User,
 } from '@medusajs/icons';
 import ItemSidebar from './item-sidebar';
 
@@ -41,14 +42,14 @@ const menuOders: MenuItem[] = [
     href: '/dashboard/order',
   },
 ];
-// const menuCoupon: MenuItem[] = [
-//   {
-//     id: 1,
-//     name: 'Danh sách mã giảm giá',
-//     icon: <ReceiptPercent />,
-//     href: '/dashboard/coupon',
-//   },
-// ];
+const menuCoupon: MenuItem[] = [
+  {
+    id: 1,
+    name: 'Danh sách mã giảm giá',
+    icon: <ReceiptPercent />,
+    href: '/dashboard/coupon',
+  },
+];
 // const menuBlog: MenuItem[] = [
 //   {
 //     id: 1,
@@ -57,14 +58,22 @@ const menuOders: MenuItem[] = [
 //     href: '/dashboard/blog',
 //   },
 // ];
-// const menuRevenue: MenuItem[] = [
-//   {
-//     id: 1,
-//     name: 'Doanh thu',
-//     icon: <CurrencyDollar />,
-//     href: '/dashboard/revenue',
-//   },
-// ];
+const menuUser: MenuItem[] = [
+  {
+    id: 1,
+    name: 'Người dùng',
+    icon: <User />,
+    href: '/dashboard/users',
+  },
+];
+const menuRevenue: MenuItem[] = [
+  {
+    id: 1,
+    name: 'Doanh thu',
+    icon: <CurrencyDollar />,
+    href: '/dashboard/revenue',
+  },
+];
 // const menuMessenger: MenuItem[] = [
 //   {
 //     id: 1,
@@ -85,7 +94,11 @@ const menuOders: MenuItem[] = [
 const Sidebar = () => {
   return (
     <aside className="border-cool-gray-20 relative h-screen max-h-screen min-w-fit space-y-4 overflow-y-scroll border-r bg-ui-bg-base px-4 py-6">
-      {/* <img src="" alt="logo" width={150} height={53} /> */} BAYA
+      <img
+        src="/baya.png"
+        alt="logo"
+        className="m-auto flex w-24 justify-center"
+      />
       <nav className="space-y-4">
         <ul>
           {menuItems.map(item => (
@@ -130,7 +143,7 @@ const Sidebar = () => {
             ))}
           </div>
         </section>
-        {/* <section className="space-y-1">
+        <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Mã giảm giá
           </header>
@@ -146,12 +159,29 @@ const Sidebar = () => {
             ))}
           </div>
         </section>
-        <section className="space-y-1">
+        {/* <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Bài viết
           </header>
           <div>
             {menuBlog.map(item => (
+              <ItemSidebar
+                key={item.id}
+                href={item.href}
+                id={item.id}
+                name={item.name}
+                icon={item.icon}
+              />
+            ))}
+          </div>
+        </section> */}
+
+        <section className="space-y-1">
+          <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
+            Người dùng
+          </header>
+          <div>
+            {menuUser.map(item => (
               <ItemSidebar
                 key={item.id}
                 href={item.href}
@@ -178,7 +208,7 @@ const Sidebar = () => {
             ))}
           </div>
         </section>
-        <section className="space-y-1">
+        {/* <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Trò Chuyện
           </header>
@@ -193,8 +223,8 @@ const Sidebar = () => {
               />
             ))}
           </div>
-        </section>
-        <section className="space-y-1">
+        </section> */}
+        {/* <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Vị trí cửa hàng
           </header>
