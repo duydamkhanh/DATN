@@ -9,7 +9,7 @@ import { ListBullet, MapPin } from '@medusajs/icons';
 import { toast } from '@medusajs/ui';
 import { createFileRoute, useLocation } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-// import VoucherModal from '@/components/VoucherModal';
+import VoucherModal from '@/components/VoucherModal';
 import ModalListCustomInfor from '@/components/custom-infor/modal-address-list';
 import { useCart } from '@/data/cart/useCartLogic';
 
@@ -363,7 +363,7 @@ function NewCheckout() {
                   >
                     Áp dụng
                   </button>
-                  {/* <VoucherModal
+                  <VoucherModal
                     isOpen={isVoucherModalOpen}
                     onClose={() => setVoucherModalOpen(false)}
                     onApplyCoupon={coupon => {
@@ -374,7 +374,7 @@ function NewCheckout() {
                     totalAmount={totalAmount}
                     userId={userId}
                     code={selectedCoupon?.code || null}
-                  /> */}
+                  />
                 </div>
               </div>
 
