@@ -67,6 +67,11 @@ const productSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    originalPrice: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
     image: {
       type: String,
     },
@@ -89,7 +94,7 @@ const productSchema = new mongoose.Schema(
     variants: [variantSchema],
     viewCount: {
       type: Number,
-      default: 0, 
+      default: 0,
     },
   },
   { timestamps: true, versionKey: false } // Tự động thêm thời gian tạo và cập nhật
