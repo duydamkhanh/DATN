@@ -14,6 +14,7 @@ const {
   countSuccessfulOrders,
   getOrderByIdAdmin,
   getOrdersByUserIdWithOnlinePayment,
+  getSoldQuantityByProductId,
 } = require("../controllers/order");
 const router = express.Router();
 
@@ -35,5 +36,6 @@ router.put("/orders/:orderId/return", returnOrder);
 router.post("/:id/return", updateReturnReason);
 router.get("/count-successful-orders", countSuccessfulOrders);
 router.get('/order/:userId', getOrdersByUserIdWithOnlinePayment);
+router.get('/order/sold/:productId', getSoldQuantityByProductId);
 
 module.exports = router;
