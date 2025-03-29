@@ -5,10 +5,10 @@ const User = require("../models/user");
 const Order = require("../models/order");
 
 const addComment = async (req, res) => {
-  const { commentText, rating, userId, productSlug, orderId, ProductId } = req.body;
+  const { commentText, rating, userId, productSlug, orderId, ProductId, avatar } = req.body;
 
   // Kiểm tra các trường bắt buộc
-  if (!productSlug || !commentText || !rating || !userId || !orderId || !ProductId) {
+  if (!productSlug || !commentText || !rating || !userId || !orderId || !ProductId || !avatar) {
     return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
   }
 
@@ -46,7 +46,8 @@ const addComment = async (req, res) => {
       rating,
       productSlug,  
       orderId,   
-      productId,             
+      productId, 
+      avatar,            
     });
 
     await newComment.save();
@@ -160,10 +161,39 @@ const deleteCommentByAdmin = async (req, res) => {
   }
 };
 
+const getCommentsByProducts = async (req, res) => {
+  const productIds = req.query.productIds?.split(",");
+
+  if (!productIds || productIds.length === 0) {
+    return res.status(400).json({ message: "Danh sách productIds không hợp lệ" });
+  }
+
+  try {
+    const comments = await Comment.find({ productId: { $in: productIds } })
+      .populate({ path: "userId", select: "username email" });
+
+    // Nhóm bình luận theo từng productId
+    const groupedComments = productIds.reduce((acc, productId) => {
+      acc[productId] = comments.filter(comment => comment.productId.toString() === productId);
+      return acc;
+    }, {});
+
+    res.status(200).json(groupedComments);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách bình luận:", error);
+    res.status(500).json({ message: "Lỗi server", error: error.message });
+  }
+};
+
+
+
+
+
 module.exports = {
   addComment,
   getCommentsByProduct,
   deleteComment,
   deleteCommentByAdmin,
-  checkReviewedProducts
+  checkReviewedProducts,
+  getCommentsByProducts,
 };

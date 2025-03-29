@@ -37,6 +37,10 @@ const commentSchema = new mongoose.Schema(
       ref: "Product",
       required: true, 
     },
+    avatar: {
+      type: String,
+      required: false, 
+    },
   },
   { timestamps: true, versionKey: false }
 );
