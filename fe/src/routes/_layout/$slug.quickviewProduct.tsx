@@ -2,8 +2,10 @@ import instance from '@/api/axiosIntance';
 import ChatBot from '@/components/ChatBot';
 import CurrencyVND from '@/components/config/vnd';
 import FeaturedProducts from '@/components/featuredProducts';
+import RatingStars from '@/components/ui/rating-stars';
 import { useCart } from '@/data/cart/useCartLogic';
 import useCommentMutation from '@/data/Comment/useCommentMutation';
+import useSoldQuantity from '@/data/oder/useOrderSoldQuantity';
 import { useFetchCategory } from '@/data/products/useProductList';
 import { useSocket } from '@/data/socket/useSocket';
 import {
@@ -154,6 +156,8 @@ function DetailProduct() {
   const userId = localStorage.getItem('userId'); // Lấy userId từ localStorage
 
   const { cartData, isLoading } = useCart(userId);
+  const sold = product ? product._id : null;
+  const { data: listSold, isError } = useSoldQuantity(sold);
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
@@ -295,12 +299,12 @@ function DetailProduct() {
           <section className="product-single container px-[55px]">
             <div className="row">
               <div className="col-lg-7">
-                <div className="flex flex-col gap-5 lg:flex-row">
+                <div className="flex flex-col gap-1 lg:flex-row">
                   {/* Thumbnails section */}
                   <div className="flex sm:flex-row md:flex-row lg:flex-col">
                     <img
                       alt="Main Product"
-                      className="h-20 w-28 cursor-pointer rounded-lg border border-white object-cover p-1 hover:border-black hover:opacity-75"
+                      className="h-20 w-16 cursor-pointer border border-white object-cover p-1 hover:border-black hover:opacity-75"
                       src={product.image}
                       onClick={() => setCurrentImage(product.image)}
                       onMouseEnter={() => setCurrentImage(product.image)}
@@ -310,7 +314,7 @@ function DetailProduct() {
                         <img
                           key={index}
                           alt={`Thumbnail ${index + 1}`}
-                          className="h-20 w-28 cursor-pointer rounded-lg border border-white object-cover p-1 hover:border-black hover:opacity-75"
+                          className="h-20 w-16 cursor-pointer border border-white object-cover p-1 hover:border-black hover:opacity-75"
                           src={img}
                           onClick={() => setCurrentImage(img)}
                           onMouseEnter={() => setCurrentImage(img)}
@@ -325,7 +329,7 @@ function DetailProduct() {
                         width={600}
                         height={300}
                         alt="Product"
-                        className="rounded-lg bg-slate-400 object-cover shadow-lg"
+                        className="bg-slate-400 object-cover shadow-lg"
                       />
                     </div>
                   </div>
@@ -385,32 +389,39 @@ function DetailProduct() {
                 <h1 className="product-single__name">{product.name}</h1>
                 <div className="product-single__rating flex gap-2">
                   <div className="reviews-group d-flex gap-1">
-                    {[...Array(5)].map((_, index) => (
-                      <StarSolid
-                        key={index}
-                        className={`h-5 w-5 ${index < Math.floor(averageRating) ? 'text-yellow-400' : 'text-gray-300'}`}
-                      />
-                    ))}
-                    <span className="font-semibold">
-                      {averageRating.toFixed(1)} trên tổng {comments.length}{' '}
-                      Bình luận
-                    </span>
+                    <span className="mt-0.5">{averageRating.toFixed(1)}</span>
+                    <RatingStars rating={averageRating} />
+                    <span className="text-gray-400">|</span> {comments.length}{' '}
+                    <span className="text-gray-400">Đánh giá</span>{' '}
+                    <span className="text-gray-400">|</span>
+                    {listSold?.soldQuantity || 0}
+                    <span className="text-gray-400">Đã bán</span>{' '}
+                    <span className="text-gray-400">|</span>
+                    {product.viewCount}{' '}
+                    <span className="text-gray-400">Lượt xem</span>
                   </div>
                 </div>
                 {/* test */}
-                <div className="product-single__price">
-                  <CurrencyVND
-                    amount={
-                      selectedVariants ? selectedVariants.price : product.price
-                    }
-                  />
-                  <div className="flex text-[13px] font-normal">
+                <div className="product-single__price flex gap-2">
+                  <span className="text-red-500">
+                    <CurrencyVND
+                      amount={
+                        selectedVariants
+                          ? selectedVariants.price
+                          : product.price
+                      }
+                    />
+                  </span>
+                  {/* <div className="flex text-[13px] font-normal">
                     <EyeMini />{' '}
                     <span className="mr-1 font-medium">
                       {product.viewCount}
                     </span>{' '}
                     người đang xem sản phẩm này
-                  </div>
+                  </div> */}
+                  <p className="mt-1 text-[15px] font-normal text-gray-400 line-through">
+                    <CurrencyVND amount={product.originalPrice} />
+                  </p>
                 </div>
 
                 <div className="product-single__short-desc">
@@ -761,22 +772,14 @@ function DetailProduct() {
                       comments.map(comment => (
                         <div className="product-single__reviews-item">
                           <div className="customer-avatar">
-                            <img loading="lazy" src="/admin.jpg" />
+                            <img loading="lazy" src={comment.avatar} />
                           </div>
                           <div className="customer-review w-full">
                             <div className="flex justify-between">
                               <div className="customer-name">
                                 <h6>{comment.userId?.username}</h6>
                                 <div className="reviews-group d-flex">
-                                  {[1, 2, 3, 4, 5].map(star => (
-                                    <div key={star}>
-                                      {comment.rating >= star ? (
-                                        <StarSolid className="text-orange-300" />
-                                      ) : (
-                                        <StarSolid className="text-orange-200" />
-                                      )}
-                                    </div>
-                                  ))}
+                                  <RatingStars rating={comment.rating} />
                                 </div>
                               </div>
                               <DropdownMenu>
