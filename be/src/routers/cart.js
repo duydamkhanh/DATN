@@ -22,3 +22,4 @@ router.patch("/cart/update-quantity", updateProductQuantity);
 router.delete("/cart/:userId/product", deleteItemFromCart);
 
 module.exports = router;
+   

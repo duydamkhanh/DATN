@@ -24,10 +24,7 @@ const UserSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
-    avatar: {
-      type: String,
-      default: "https://picsum.photos/100/100",
-    },
+    avatar: { type: String, default: '' }, // Không bắt buộc
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -42,6 +39,11 @@ const UserSchema = new mongoose.Schema(
         /^[0-9]{10,11}$/,
         "Số điện thoại không hợp lệ! Phải chứa 10-11 chữ số",
       ],
+    },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "BLOCKED"], 
+      default: "ACTIVE",
     },
   },
   { timestamps: true, versionKey: false }

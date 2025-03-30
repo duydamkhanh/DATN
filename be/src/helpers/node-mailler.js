@@ -15,14 +15,14 @@ const Mail = {
   sendResetPassword: async (email, token) => {
     try {
       const info = await transporter.sendMail({
-        from: '"Shop Fashion Zone xin thông báo !" <admin@ethereal.email>',
+        from: '"Shop Baya xin thông báo !" <admin@ethereal.email>',
         to: email,
         subject: "Reset Password",
         html: `
           <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
             <h2 style="color: #4CAF50; text-align: center;">Yêu cầu đặt lại mật khẩu</h2>
             <p>Xin chào,</p>
-            <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình tại <strong>Shop Fashion Zone</strong>. Vui lòng nhấn vào liên kết dưới đây để thay đổi mật khẩu của bạn:</p>
+            <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình tại <strong>Shop Baya</strong>. Vui lòng nhấn vào liên kết dưới đây để thay đổi mật khẩu của bạn:</p>
             <div style="text-align: center; margin: 20px 0;">
               <a href="http://localhost:5173/reset-password?code=${token}"
                  style="background-color: #4CAF50; color: #fff; padding: 12px 20px; text-decoration: none; font-size: 16px; border-radius: 5px;">
@@ -30,7 +30,7 @@ const Mail = {
               </a>
             </div>
             <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi cho đến khi bạn nhấp vào liên kết ở trên và tạo mật khẩu mới.</p>
-            <p style="margin-top: 30px; color: #888;">Trân trọng,<br/>Đội ngũ hỗ trợ Shop Fashion Zone</p>
+            <p style="margin-top: 30px; color: #888;">Trân trọng,<br/>Đội ngũ hỗ trợ Shop Baya</p>
           </div>
         `,
       });
@@ -43,14 +43,13 @@ const Mail = {
 
   sendOrderConfirmation: async (email, order) => {
     const info = await transporter.sendMail({
-      from: '"Shop Fashion Zone" <admin@ethereal.email>',
+      from: '"Shop Baya" <admin@ethereal.email>',
       to: email,
       subject: "Xác nhận đơn hàng của bạn",
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-          <h2 style="color: #4CAF50; text-align: center;">Cảm ơn bạn đã đặt hàng tại Fashion Zone!</h2>
+          <h2 style="color: #4CAF50; text-align: center;">Cảm ơn bạn đã đặt hàng tại Baya!</h2>
           <p style="text-align: center; font-size: 16px;">Đơn hàng của bạn đã được xác nhận. Dưới đây là chi tiết đơn hàng:</p>
-
           <h3 style="color: #4CAF50; border-bottom: 2px solid #4CAF50; padding-bottom: 5px;">Thông tin khách hàng</h3>
           <p><strong>Tên:</strong> ${order.customerInfo.name}</p>
           <p><strong>Số điện thoại:</strong> ${order.customerInfo.phone}</p>
@@ -79,7 +78,7 @@ const Mail = {
             <p style="color: #555;">Vui lòng theo dõi đơn hàng của bạn trên website để biết trạng thái đơn hàng của bạn!</p>
           </div>
 
-          <p style="text-align: center; margin-top: 30px; font-size: 14px; color: #555;">Shop Fashion Zone xin cảm ơn quý khách!</p>
+          <p style="text-align: center; margin-top: 30px; font-size: 14px; color: #555;">Shop Baya xin cảm ơn quý khách!</p>
         </div>
       `,
     });
@@ -112,7 +111,7 @@ const Mail = {
     const translatedStatus = Mail.translateOrderStatus(order.status);
 
     const info = await transporter.sendMail({
-      from: '"Shop Fashion Zone" <admin@ethereal.email>',
+      from: '"Shop Baya" <admin@ethereal.email>',
       to: email,
       subject: `Cập nhật trạng thái đơn hàng: ${order.orderNumber}`,
       html: `
@@ -147,7 +146,7 @@ const Mail = {
             <p style="color: #555;">Vui lòng theo dõi đơn hàng của bạn trên website để biết trạng thái đơn hàng của bạn!</p>
           </div>
 
-          <p style="text-align: center; margin-top: 30px; font-size: 14px; color: #555;">Shop Fashion Zone xin cảm ơn quý khách!</p>
+          <p style="text-align: center; margin-top: 30px; font-size: 14px; color: #555;">Shop Baya xin cảm ơn quý khách!</p>
         </div>
       `,
     });

@@ -44,8 +44,6 @@ router.post(
   uploadGallery
 );
 
-
-
 router.put(`/products/:id`, updateProduct);
 
 router.delete(`/products/:id`, deleteProduct);

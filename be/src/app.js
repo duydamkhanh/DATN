@@ -7,18 +7,20 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 
 // Import routes
-
+// const message = require("./routers/chatRoutes");
 const cartRouter = require("./routers/cart");
 const productRouter = require("./routers/product");
 const categoryRouter = require("./routers/category");
 const authRouter = require("./routers/auth.router");
 const orderRouter = require("./routers/order");
-const couponRoutes = require("./routers/coupon");
-const paymentRoutes = require("./routers/paymentRoutes");
-
-const commentRouter = require("./routers/comment");
 const shippingRoutes = require("./routers/shipping");
+const couponRoutes = require("./routers/coupon");
+const commentRouter = require("./routers/comment");
+const paymentRoutes = require("./routers/paymentRoutes");
+const blogRoutes = require("./routers/blog");
 const customerRoutes = require("./routers/customerRoutes");
+// const locationRoutes = require("./routers/address");
+
 // Database connection
 const { connectDB } = require("./config/db");
 
@@ -26,7 +28,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(morgan("dev"));
+app.use(morgan("dev")); 
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -68,16 +70,19 @@ app.use("/api", authRouter);
 app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
 app.use("/api", orderRouter);
+app.use("/api", shippingRoutes);
+app.use("/api", couponRoutes);
 app.use("/api", commentRouter);
 app.use("/api", paymentRoutes);
-app.use("/api", couponRoutes);
-app.use("/api", shippingRoutes);
+// app.use("/api", message);
+app.use("/api", blogRoutes);
 app.use("/api", customerRoutes);
+// app.use("/api", locationRoutes);
 
 // Start servers
-const appPort = 8000;
-app.listen(appPort, () => {
-  console.log(`App running on http://localhost:${appPort}`);
+const PORT = process.env.PORT || 8081;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
 
 const socketPort = 8080;

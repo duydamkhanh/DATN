@@ -8,10 +8,11 @@ const moment = require("moment");
 const axios = require("axios");
 require("dotenv").config();
 const { config, order2 } = require("../zalo_pay/config");
-const cron = require("node-cron");
+const cron = require('node-cron');
 const Coupon = require("../models/coupon");
 const User = require("../models/user");
-const { ObjectId } = require("mongodb");
+const { ObjectId } = require('mongodb');
+
 
 const ZALOPAY_ID_APP = process.env.ZALOPAY_ID_APP;
 const ZALOPAY_KEY1 = process.env.ZALOPAY_KEY1;
@@ -20,22 +21,13 @@ const ZALOPAY_ENDPOINT = process.env.ZALOPAY_ENDPOINT;
 const createOrder = async (req, res) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const {
-        userId,
-        items,
-        totalPrice,
-        customerInfo,
-        paymentMethod,
-        shippingMessageDisplay,
-        discount,
-        couponCode,
-      } = req.body;
+      const { userId, items, totalPrice, customerInfo, paymentMethod, shippingMessageDisplay , discount, couponCode } = req.body;
 
       const order = await Order.create({
         userId,
         items: items.map((item) => ({
           productId: item.productId,
-          slug: item.slug || `product-${item.productId}`,
+          slug: item.slug || `product-${item.productId}`,  
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -48,35 +40,37 @@ const createOrder = async (req, res) => {
         totalPrice,
         customerInfo,
         paymentMethod,
-        status: "pending",
-        paymentStatus: "cod",
+        status: "pending", 
+        paymentStatus: "cod", 
         shippingMessageDisplay,
         discount,
       });
+
 
       for (const item of items) {
         const product = await Product.findById(item.productId);
         const variant = product.variants.find(
           (variant) => variant.sku === item.variantId
         );
-
+      
         if (variant) {
           await Product.updateOne(
             { _id: item.productId, "variants.sku": item.variantId },
             { $inc: { "variants.$.countInStock": -item.quantity } },
             { new: true }
           );
-        }
+        } 
+        
       }
 
-      const Id = new ObjectId(order.userId); // Chuyển sang ObjectId
-      const user = await User.findOne({ _id: Id });
+     
+        const Id = new ObjectId(order.userId); // Chuyển sang ObjectId
+        const user = await User.findOne({ _id: Id });
 
       if (!user || !user.email) {
-        throw new Error("User not found or email is missing.");
+        throw new Error('User not found or email is missing.');
       }
-      const email = user.email;
-
+      // const email = user.email;
       // Mail.sendOrderConfirmation(email, order);
 
       if (couponCode) {
@@ -84,22 +78,20 @@ const createOrder = async (req, res) => {
         if (!coupon) {
           return res.status(400).json({ error: "Invalid coupon code" });
         }
-
+      
         if (!coupon.isActive || coupon.expirationDate < new Date()) {
-          return res
-            .status(400)
-            .json({ error: "Coupon has expired or is inactive" });
+          return res.status(400).json({ error: "Coupon has expired or is inactive" });
         }
-
+      
         coupon.usageCount += 1;
         coupon.usedBy.push(userId);
         await coupon.save();
-      }
+      }          
 
       if (paymentMethod === "cod") {
-        return res.status(200).json({
-          message: "Order created successfully",
-          orderId: order._id,
+        return res.status(200).json({ 
+          message: "Order created successfully", 
+          orderId: order._id ,          
         });
       }
       if (paymentMethod === "online") {
@@ -116,8 +108,7 @@ const createOrder = async (req, res) => {
           amount: +totalPrice,
           description: `Pay for OrderId #${transID}`,
           bank_code: "",
-          callback_url:
-            "https://b153-42-114-151-28.ngrok-free.app/api/callback",
+          callback_url: "https://b153-42-114-151-28.ngrok-free.app/api/callback",
         };
 
         const dataEncode =
@@ -159,6 +150,7 @@ const createOrder = async (req, res) => {
     }
   });
 };
+
 
 const countOrdersByStatus = async () => {
   const orders = await Order.aggregate([
@@ -205,8 +197,8 @@ const getOrders = async (req, res) => {
       "exchange_completed",
       "canceled_complaint",
       "refund_initiated",
-      "refund_done",
-      "all-refund",
+      "refund_done", 
+      "all-refund", 
     ];
 
     const filter = {};
@@ -219,29 +211,15 @@ const getOrders = async (req, res) => {
       if (statusArray.length > 0) {
         if (statusArray.includes("all-delivery")) {
           filter.status = {
-            $in: [
-              "pending",
-              "pendingPayment",
-              "shipped",
-              "delivered",
-              "received",
-              "canceled",
-            ],
+            $in: ["pending", "pendingPayment", "shipped", "delivered", "received", "canceled"],
           };
         } else if (statusArray.includes("all-complaint")) {
           filter.status = {
-            $in: [
-              "complaint",
-              "refund_in_progress",
-              "exchange_in_progress",
-              "refund_completed",
-              "exchange_completed",
-              "canceled_complaint",
-            ],
+            $in: ["complaint", "refund_in_progress", "exchange_in_progress", "refund_completed", "exchange_completed", "canceled_complaint"],
           };
         } else if (statusArray.includes("all-refund")) {
           filter.status = { $in: ["refund_initiated", "refund_done"] };
-          filter.paymentMethod = "online";
+          filter.paymentMethod = "online"; 
         } else {
           filter.status = { $in: statusArray };
         }
@@ -307,14 +285,17 @@ const getOrderById = async (req, res) => {
   }
 };
 
+
+
 const getOrdersByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId })
+      .sort({ createdAt: -1 }) 
 
     if (!orders || orders.length === 0) {
-      return res.status(StatusCodes.OK).json([]);
+      return res.status(StatusCodes.OK).json([]); 
     }
 
     orders.forEach((order) => {
@@ -346,10 +327,8 @@ const updateOrder = async (req, res) => {
         .status(StatusCodes.NOT_FOUND)
         .json({ error: "Order not found" });
     }
-    if (
-      (status === "refund_completed" && order.status !== "refund_completed") ||
-      (status === "canceled" && order.status !== "canceled")
-    ) {
+    if ((status === "refund_completed" && order.status !== "refund_completed") || 
+        (status === "canceled" && order.status !== "canceled")) {
       for (const item of order.items) {
         const product = await Product.findById(item.productId);
 
@@ -366,7 +345,7 @@ const updateOrder = async (req, res) => {
 
           await product.save();
         }
-      }
+      } 
     }
     if (status === "delivered" && order.status !== "delivered") {
       order.paymentStatus = "pending";
@@ -375,9 +354,9 @@ const updateOrder = async (req, res) => {
       order.paymentStatus = "doneRefund";
     }
     if (status === "canceled" && order.status !== "canceled") {
-      if (order.paymentMethod === "online") {
+      if(order.paymentMethod === 'online'){
         order.paymentStatus = "pendingRefund";
-        status = "refund_initiated";
+        status = 'refund_initiated'
       }
     }
     if (order.status !== status) {
@@ -390,15 +369,15 @@ const updateOrder = async (req, res) => {
     const user = await User.findOne({ _id: Id });
 
     if (!user || !user.email) {
-      throw new Error("User not found or email is missing.");
+      throw new Error('User not found or email is missing.');
     }
-
-    const email = user.email;
-    if (email) {
-      await Mail.sendOrderStatusUpdate(email, order);
-    } else {
-      console.warn("Customer email not found. Skipping email notification.");
-    }
+    
+    // const email = user.email;
+    // if (email) {
+    //   await Mail.sendOrderStatusUpdate(email, order);
+    // } else {
+    //   console.warn("Customer email not found. Skipping email notification.");
+    // }
 
     return res.status(StatusCodes.OK).json(order);
   } catch (error) {
@@ -465,7 +444,7 @@ const cancelOrder = async (req, res) => {
           product.countInStock += item.quantity;
         }
 
-        await product.save();
+        await product.save(); 
       }
     }
 
@@ -506,8 +485,8 @@ const confirmReceived = async (req, res) => {
       });
     }
 
-    order.status = "delivered";
-    order.paymentStatus = "pending";
+    order.status = "delivered"; 
+    order.paymentStatus = 'pending'
     await order.save();
 
     if (order.customerInfo && order.customerInfo.email) {
@@ -615,16 +594,12 @@ const updateReturnReason = async (req, res) => {
     }
 
     // Kiểm tra trạng thái có hợp lệ không
-    if (
-      !["complaint", "return_completed", "pendingPayment", "canceled"].includes(
-        status
-      )
-    ) {
+    if (!["complaint", "return_completed", "pendingPayment", "canceled"].includes(status)) {
       return res.status(400).json({ message: "Invalid status for return." });
     }
 
     // Nếu trạng thái chuyển thành "canceled" và trước đó không phải "canceled"
-
+   
     // Cập nhật trạng thái và lý do trả hàng
     order.returnReason = returnReason;
     order.status = status;
@@ -638,7 +613,8 @@ const updateReturnReason = async (req, res) => {
     if (order.customerInfo && order.customerInfo.email) {
       await Mail.sendOrderStatusUpdate(order.customerInfo.email, order);
     }
-
+   
+    
     res.status(200).json({
       message: "Order updated with return reason and status.",
       order,
@@ -652,7 +628,7 @@ const updateReturnReason = async (req, res) => {
   }
 };
 
-cron.schedule("* * * * *", async () => {
+cron.schedule('* * * * *', async () => {
   try {
     console.log("Cron job triggered at:", new Date());
 
@@ -661,7 +637,7 @@ cron.schedule("* * * * *", async () => {
 
     // Tìm các đơn hàng có trạng thái 'pendingPayment' quá 1 phút
     const orders = await Order.find({
-      status: "pendingPayment",
+      status: 'pendingPayment',
       updatedAt: { $lt: oneMinuteAgo },
     });
 
@@ -699,10 +675,8 @@ cron.schedule("* * * * *", async () => {
         }
       }
 
-      order.status = "canceled";
-      order.statusHistory.push(
-        JSON.stringify({ status: "canceled", time: new Date() })
-      );
+      order.status = 'canceled';
+      order.statusHistory.push(JSON.stringify({ status: 'canceled', time: new Date() }));
       await order.save();
 
       console.log(`Order ${order._id} status updated to canceled.`);
@@ -739,8 +713,8 @@ const countSuccessfulOrders = async (req, res) => {
 };
 const getOrderByIdAdmin = async (req, res) => {
   try {
-    const { orderId } = req.params;
-    const order = await Order.findOne({ _id: orderId });
+    const {  orderId } = req.params;
+    const order = await Order.findOne({  _id: orderId });
     if (!order) {
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -757,24 +731,16 @@ const getOrderByIdAdmin = async (req, res) => {
 const getOrdersByUserIdWithOnlinePayment = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10 } = req.query;  
     const skip = (page - 1) * limit;
-    const totalOrders = await Order.countDocuments({
-      userId,
-      paymentMethod: "online",
-    });
+    const totalOrders = await Order.countDocuments({ userId, paymentMethod: "online" }); 
 
     const orders = await Order.find({ userId, paymentMethod: "online" })
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
+      .skip(skip) 
+      .limit(Number(limit)); 
     if (!orders || orders.length === 0) {
-      return res
-        .status(StatusCodes.OK)
-        .json({
-          data: [],
-          meta: { totalItems: 0, totalPages: 0, currentPage: 1, pageSize: 10 },
-        });
+      return res.status(StatusCodes.OK).json({ data: [], meta: { totalItems: 0, totalPages: 0, currentPage: 1, pageSize: 10 } });
     }
 
     orders.forEach((order) => {
@@ -824,8 +790,8 @@ const getSoldQuantityByProductId = async (req, res) => {
 
     let soldQuantity = 0;
 
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
+    orders.forEach(order => {
+      order.items.forEach(item => {
         if (item.productId.equals(objectId)) {
           soldQuantity += item.quantity;
         }
@@ -840,6 +806,8 @@ const getSoldQuantityByProductId = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+
 
 module.exports = {
   getOrderById,

@@ -32,7 +32,7 @@ const getProduct = async (req, res) => {
       return res.status(200).json({
         meta: {
           totalItems: 0,
-          totalPages: 0,
+          totalPages: 0, 
           currentPage: Number(page),
           limit: Number(limit),
         },

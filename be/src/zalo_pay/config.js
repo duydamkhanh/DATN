@@ -28,7 +28,7 @@ const items = [
       itename: "kim nguyen bao",
       itemprice: 198400,
       itemquantity: 2,
-    },
+    },             
   ],
 ];
 const transID = Math.floor(Math.random() * 1000000);
@@ -59,7 +59,7 @@ const data =
   "|" +
   order.embed_data +
   "|" +
-  order.item;
+  order.item;   
 order.mac = CryptoJS.HmacSHA256(data, config.key1).toString();
 
 module.exports = {

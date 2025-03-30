@@ -5,10 +5,10 @@ const User = require("../models/user");
 const Order = require("../models/order");
 
 const addComment = async (req, res) => {
-  const { commentText, rating, userId, productSlug, orderId, ProductId, avatar } = req.body;
+  const { commentText, rating, userId, productSlug, orderId, ProductId } = req.body;
 
   // Kiểm tra các trường bắt buộc
-  if (!productSlug || !commentText || !rating || !userId || !orderId || !ProductId || !avatar) {
+  if (!productSlug || !commentText || !rating || !userId || !orderId || !ProductId ) {
     return res.status(400).json({ message: "Thiếu các trường bắt buộc" });
   }
 

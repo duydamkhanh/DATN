@@ -16,7 +16,7 @@ const calculateShippingFee = (weight, address, orderValue = 0, coupon = null) =>
         "Huyện Phú Xuyên", "Huyện Ba Vì", "Huyện Phúc Thọ", "Huyện Thạch Thất", "Huyện Quốc Oai",
         "Huyện Đan Phượng", "Huyện Hoài Đức", "Huyện Chương Mỹ", "Huyện Thanh Oai", "Huyện Mỹ Đức",
         "Huyện Ứng Hòa"
-      ],
+      ],    
       baseFees: [15000, 19000, 20000, 26000, 29000, 30000],
       extraFeePer500g: 3000
     },
@@ -41,7 +41,7 @@ const calculateShippingFee = (weight, address, orderValue = 0, coupon = null) =>
   } else if (weight <= 1000) {
     shippingFee = zoneData.baseFees[1];
   } else if (weight <= 1500) {
-    shippingFee = zoneData.baseFees[2];
+    shippingFee = zoneData.baseFees[2]; 
   } else if (weight <= 2000) {
     shippingFee = zoneData.baseFees[3];
   } else if (weight <= 2500) {

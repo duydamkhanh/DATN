@@ -22,6 +22,6 @@ router.post(`/categories`, addCategory);
 
 router.get(`/categories/:slug`, getCategoryBySlug);
 router.put(`/categorys/:id`, updateCategory);
-
+  
 router.delete(`/categorys/:id`, deleteCategory);
 module.exports = router;

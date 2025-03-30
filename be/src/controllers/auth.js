@@ -103,10 +103,10 @@ const signup = async (req, res) => {
 
 const signin = async (req, res) => {
   try {
-    // Lấy dữ liệu từ client gửi lên : req.body
+    // Lấy dữ liệu từ client gửi lên
     const { email, password } = req.body;
 
-    // Kiểm tra dữ liệu từ client gửi lên có đúng với schema không
+    // Kiểm tra dữ liệu có hợp lệ không
     const { error } = signinSchema.validate(req.body, { abortEarly: false });
     if (error) {
       const messages = error.details.map((error) => error.message);
@@ -125,7 +125,15 @@ const signin = async (req, res) => {
       });
     }
 
-    // So sánh mật khẩu từ client gửi lên với mật khẩu trong DB
+    // Kiểm tra trạng thái của tài khoản
+    if (user.status !== "ACTIVE") {
+      return res.status(403).json({
+        field: "status",
+        message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+      });
+    }
+
+    // So sánh mật khẩu
     const isMatch = await bcryptjs.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({
@@ -134,7 +142,7 @@ const signin = async (req, res) => {
       });
     }
 
-    // Nếu khớp thì tạo token và trả về client
+    // Tạo token nếu đăng nhập thành công
     const token = jwt.sign({ userId: user._id }, "123456", { expiresIn: "1h" });
 
     // Xóa mật khẩu trước khi trả về client
@@ -151,6 +159,7 @@ const signin = async (req, res) => {
     });
   }
 };
+
 
 let EMAIL = null;
 
@@ -231,20 +240,32 @@ const updatePassword = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    // Fetch all users from the database
-    const users = await User.find();
+    const { page = 1, limit = 10 } = req.query; // Mặc định page = 1, limit = 10
+    const skip = (page - 1) * limit; // Số bản ghi cần bỏ qua
 
-    // If no users are found
+    // Fetch users với phân trang
+    const users = await User.find().skip(skip).limit(parseInt(limit));
+
+    // Đếm tổng số user
+    const totalUsers = await User.countDocuments();
+
+    // Kiểm tra nếu không có user
     if (!users || users.length === 0) {
       return res.status(404).json({
         message: "No users found",
       });
     }
 
-    // Return the users
+    // Trả về danh sách users với metadata phân trang
     res.status(200).json({
       message: "Users fetched successfully",
       users,
+      pagination: {
+        totalUsers,
+        totalPages: Math.ceil(totalUsers / limit),
+        currentPage: parseInt(page),
+        limit: parseInt(limit),
+      },
     });
   } catch (error) {
     console.error(error);
@@ -254,6 +275,7 @@ const getAllUsers = async (req, res) => {
     });
   }
 };
+
 const getUserInfo = async (req, res) => {
   // Lấy userId từ header (ví dụ: từ 'user-id' header)
   const userId = req.headers["user-id"];
@@ -526,6 +548,54 @@ const updateUser = async (req, res) => {
   }
 };
 
+const updateUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    // Kiểm tra giá trị trạng thái hợp lệ
+    const validStatuses = ["ACTIVE", "BLOCKED"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        field: "status",
+        message: "Trạng thái không hợp lệ! Chỉ chấp nhận 'ACTIVE' hoặc 'BLOCKED'.",
+      });
+    }
+
+    // Tìm và cập nhật trạng thái người dùng
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    // Kiểm tra xem user có tồn tại không
+    if (!user) {
+      return res.status(404).json({
+        message: "Không tìm thấy người dùng.",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Cập nhật trạng thái thành công.",
+      user,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Đã xảy ra lỗi trên máy chủ. Vui lòng thử lại sau.",
+    });
+  }
+};
+
+const uploadAvatar = async (req, res) => {
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  res.json(file.path);
+};
+
 module.exports = {
   signin,
   signup,
@@ -537,4 +607,6 @@ module.exports = {
   updateAccount,
   verifyOldPassword,
   updateUser,
+  updateUserStatus,
+  uploadAvatar,
 };

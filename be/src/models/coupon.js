@@ -26,12 +26,12 @@ const couponSchema = new mongoose.Schema({
     required: true,
   },
   startDate: {
-    type: Date, // Ngày bắt đầu của mã giảm giá
+    type: Date, 
     required: false,
   },
   maxDiscountAmount: {
-    type: Number, // Số tiền tối đa được giảm
-    default: 0, // Mặc định là không có giới hạn tối đa
+    type: Number, 
+    default: 0,
   },
   isActive: {
     type: Boolean,
@@ -43,12 +43,12 @@ const couponSchema = new mongoose.Schema({
   },
   usageCount: {
     type: Number,
-    default: 0, // Mặc định là chưa được sử dụng lần nào
+    default: 0,
   },
   usedBy: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: "User", // Tham chiếu tới collection User
-    default: [], // Mảng rỗng mặc định
+    ref: "User",
+    default: [],
   },
 });
 
