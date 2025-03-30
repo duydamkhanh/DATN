@@ -52,6 +52,7 @@ function EditProduct() {
     _id: string;
     name: string;
     price: number;
+    originalPrice: number;
     image: string;
     category: string[];
     gallery?: string[];
@@ -64,6 +65,7 @@ function EditProduct() {
       _id: '',
       name: '',
       price: 0,
+      originalPrice: 0,
       image: '',
       category: [],
       gallery: [],
@@ -123,6 +125,7 @@ function EditProduct() {
         _id: product._id,
         name: product.name,
         price: product.price,
+        originalPrice: product.originalPrice,
         image: product.image,
         category: product.category,
         gallery: product.gallery || [],
@@ -186,6 +189,7 @@ function EditProduct() {
     _id: string;
     name: string;
     price: number;
+    originalPrice: number;
     image: string;
     category: string[];
     gallery?: string[];
@@ -442,6 +446,30 @@ function EditProduct() {
                 {errors.price && (
                   <span className="text-xs text-red-500">
                     {errors.price.message}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* originalPrice */}
+            <div className="flex space-x-4">
+              <div className="flex-1 space-y-3">
+                <label className="block text-sm font-medium text-ui-fg-base">
+                  <span className="text-ui-tag-red-text">*</span> Giá Cũ (VND)
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 199.99"
+                  size="base"
+                  {...register('originalPrice', {
+                    required: 'Giá cũ phải bắt buộc',
+                    min: { value: 0, message: 'Price must be positive' },
+                  })}
+                />
+                {errors.originalPrice && (
+                  <span className="text-xs text-red-500">
+                    {errors.originalPrice.message}
                   </span>
                 )}
               </div>
