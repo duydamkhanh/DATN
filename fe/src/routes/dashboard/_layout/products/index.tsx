@@ -198,7 +198,10 @@ function ProductList() {
               Ảnh
             </Table.HeaderCell>
             <Table.HeaderCell className="font-semibold text-ui-fg-base">
-              Giá (VND)
+              Giá
+            </Table.HeaderCell>
+            <Table.HeaderCell className="font-semibold text-ui-fg-base">
+              Giá KM
             </Table.HeaderCell>
             <Table.HeaderCell className="font-semibold text-ui-fg-base">
               Danh mục
@@ -275,6 +278,9 @@ function ProductList() {
                         className="h-10 w-9 rounded-lg object-contain"
                       />
                     )}
+                  </Table.Cell>
+                  <Table.Cell className="font-semibold text-ui-fg-base">
+                    <CurrencyVND amount={product.originalPrice} />
                   </Table.Cell>
                   <Table.Cell className="font-semibold text-ui-fg-base">
                     <CurrencyVND amount={product.price} />

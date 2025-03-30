@@ -14,6 +14,8 @@ const categoryRouter = require("./routers/category");
 const authRouter = require("./routers/auth.router");
 const orderRouter = require("./routers/order");
 const couponRoutes = require("./routers/coupon");
+const paymentRoutes = require("./routers/paymentRoutes");
+
 const commentRouter = require("./routers/comment");
 const shippingRoutes = require("./routers/shipping");
 const customerRoutes = require("./routers/customerRoutes");
@@ -67,6 +69,8 @@ app.use("/api", categoryRouter);
 app.use("/api", cartRouter);
 app.use("/api", orderRouter);
 app.use("/api", commentRouter);
+app.use("/api", paymentRoutes);
+app.use("/api", couponRoutes);
 app.use("/api", shippingRoutes);
 app.use("/api", customerRoutes);
 

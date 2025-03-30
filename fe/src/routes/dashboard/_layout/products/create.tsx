@@ -38,6 +38,7 @@ function AddProduct() {
   } = useForm<{
     name: string;
     price: number;
+    originalPrice: number;
     image: string;
     category: string;
     gallery?: string[];
@@ -131,6 +132,7 @@ function AddProduct() {
   const onCreateProduct: SubmitHandler<{
     name: string;
     price: number;
+    originalPrice: number;
     image: string;
     category: string[];
     gallery?: string[];
@@ -352,6 +354,30 @@ function AddProduct() {
                       onClick={() => setSelectedImage(null)}
                     />
                   </div>
+                )}
+              </div>
+            </div>
+
+            {/* originalPrice */}
+            <div className="flex space-x-4">
+              <div className="flex-1 space-y-3">
+                <label className="text-sm font-medium text-ui-fg-base">
+                  <span className="text-ui-tag-red-text">*</span> Giá Cũ (VND)
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="e.g., 199.99"
+                  size="base"
+                  {...register('originalPrice', {
+                    required: 'Giá cũ phải bắt buộc',
+                    min: { value: 0, message: 'Giá không được nhỏ hơn 0' },
+                  })}
+                />
+                {errors.originalPrice && (
+                  <span className="text-xs text-red-500">
+                    {errors.originalPrice.message}
+                  </span>
                 )}
               </div>
             </div>
