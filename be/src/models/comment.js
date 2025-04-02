@@ -35,12 +35,12 @@ const commentSchema = new mongoose.Schema(
     productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
-      required: true, 
+      required: true,
     },
-    // avatar: {
-    //   type: String,
-    //   required: false, 
-    // },
+    avatar: {
+      type: String,
+      required: false,
+    },
   },
   { timestamps: true, versionKey: false }
 );
