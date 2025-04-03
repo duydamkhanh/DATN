@@ -522,7 +522,7 @@ function AddProduct() {
                     rules={{ required: 'Mô tả cần bắt buộc' }}
                     render={({ field: { onChange, value } }) => (
                       <TextareaDescription
-                        apiKey="vx5npguuuktlxhbv9tv6vvgjk1x5astnj8kznhujei9w6ech"
+                        apiKey="03491t61serrx76t1i2kcn2dno2b45jmt28up6et6tgrb3uz"
                         value={value}
                         onChange={(content: string) =>
                           handleEditorChange(content, onChange)
