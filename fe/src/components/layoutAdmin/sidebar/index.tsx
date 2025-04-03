@@ -7,6 +7,7 @@ import {
   ReceiptPercent,
   Tag,
   User,
+  Users,
 } from '@medusajs/icons';
 import ItemSidebar from './item-sidebar';
 
@@ -64,6 +65,12 @@ const menuUser: MenuItem[] = [
     name: 'Người dùng',
     icon: <User />,
     href: '/dashboard/users',
+  },
+  {
+    id: 1,
+    name: 'Khách hàng',
+    icon: <Users />,
+    href: '/dashboard/users/client',
   },
 ];
 const menuRevenue: MenuItem[] = [

@@ -12,7 +12,8 @@ const {
   verifyOldPassword,
   updateUser,
   updateUserStatus,
-  uploadAvatar
+  uploadAvatar,
+  getAllCustomers,
 } = require("../controllers/auth");
 const router = express.Router();
 router.post(`/signup`, signup);
@@ -25,11 +26,8 @@ router.get("/user/info/:userId", getUserInfo);
 router.put("/user/update/:userId", updateAccount);
 router.put("/user/update", updateUser);
 router.patch("/users/:userId/status", updateUserStatus);
-router.post(
-  `/upload-avatar`,
-  upload.single("file"),
-  uploadAvatar
-);
+router.post(`/upload-avatar`, upload.single("file"), uploadAvatar);
 
 router.post("/verify-old-password", verifyOldPassword);
+router.get("/customer-user", getAllCustomers);
 module.exports = router;

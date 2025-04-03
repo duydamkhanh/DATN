@@ -87,13 +87,14 @@ function UserOrder() {
   const [OrderId, setOrderId] = useState(null);
   const [ProductSlug, setProductSlug] = useState(null);
   const [ProductId, setProductId] = useState(null);
+
   const fetchReviewedProducts = async () => {
     try {
       if (!orders || orders.length === 0) {
         console.error('Không có đơn hàng để kiểm tra.');
         return;
       }
-  
+
       // Tạo payload chỉ chứa các mục hợp lệ
       const dataToCheck = orders
         .map(order => ({
@@ -101,31 +102,33 @@ function UserOrder() {
           productSlugs: order.items.map(item => item.slug).filter(Boolean), // Lọc productSlugs null hoặc undefined
         }))
         .filter(data => data.orderId && data.productSlugs.length > 0); // Lọc các mục không có orderId hoặc productSlugs hợp lệ
-  
+
       if (dataToCheck.length === 0) {
         console.warn('Không có dữ liệu hợp lệ để gửi.');
         return;
       }
-  
+
       console.log('Payload gửi lên:', { data: dataToCheck });
-  
+
       // Gửi dữ liệu đến API
-      const response = await instance.post('/comments/check-reviewed', { data: dataToCheck });
-  
+      const response = await instance.post('/comments/check-reviewed', {
+        data: dataToCheck,
+      });
+
       const reviewedProducts = response.data.reviewedProducts || [];
-      console.log("Danh sách sản phẩm đã đánh giá:", reviewedProducts);
-  
+      console.log('Danh sách sản phẩm đã đánh giá:', reviewedProducts);
+
       // Cập nhật danh sách đã đánh giá
-      setReviewedProductIds(reviewedProducts.map(item => ({
-        orderId: item.orderId,
-        productSlug: item.productSlug,
-      })));
+      setReviewedProductIds(
+        reviewedProducts.map(item => ({
+          orderId: item.orderId,
+          productSlug: item.productSlug,
+        }))
+      );
     } catch (error) {
       console.error('Lỗi khi kiểm tra sản phẩm đã được đánh giá:', error);
     }
   };
-  
-
 
   useEffect(() => {
     fetchReviewedProducts(); // Cập nhật ngay khi component render hoặc khi orders thay đổi
@@ -135,12 +138,11 @@ function UserOrder() {
     document.body.style.overflow = 'hidden';
     setReviewBoxVisible(true);
     setSelectedProduct(product);
-    console.log("product", product.slug);
-    setOrderId(orderId)
-    setProductSlug(product.slug)
-    setProductId(product.productId)
+    console.log('product', product.slug);
+    setOrderId(orderId);
+    setProductSlug(product.slug);
+    setProductId(product.productId);
   };
-  console.log("id", ProductId);
 
   const handleCloseReviewBox = () => {
     document.body.style.overflow = 'auto';
@@ -177,10 +179,10 @@ function UserOrder() {
         const updatedOrders = orders.map((order: Order) =>
           order._id === orderId
             ? {
-              ...order,
-              status: 'refund_initiated',
-              paymentStatus: 'pendingRefund',
-            }
+                ...order,
+                status: 'refund_initiated',
+                paymentStatus: 'pendingRefund',
+              }
             : order
         );
         setOrders(updatedOrders);
@@ -227,22 +229,25 @@ function UserOrder() {
       });
   };
 
+  const storedData = JSON.parse(localStorage.getItem('user') || '{}');
+  const avatar = storedData?.user?.avatar || 'Không có tên người dùng';
+
   const handleCommentSubmit = async () => {
     if (!newComment.trim()) {
       toast.error('Vui lòng nhập bình luận.');
       return;
     }
-  
+
     if (rating === 0) {
       toast.error('Vui lòng chọn đánh giá sao.');
       return;
     }
-  
+
     if (!OrderId || !ProductSlug) {
       toast.error('Không xác định được đơn hàng hoặc sản phẩm.');
       return;
     }
-  
+
     try {
       // Gọi mutation để tạo bình luận
       const response = await createComment.mutateAsync({
@@ -252,25 +257,26 @@ function UserOrder() {
         userId: localStorage.getItem('userId') || '', // Lấy userId từ localStorage
         rating,
         ProductId: ProductId,
+        avatar: avatar,
       });
-  
+
       // Log phản hồi từ backend để kiểm tra (nếu cần)
       console.log('Phản hồi từ backend:', response);
-  
+
       // Cập nhật lại danh sách các sản phẩm đã được đánh giá
       await fetchReviewedProducts(); // Đảm bảo fetch lại ngay sau khi gửi bình luận thành công
-  
+
       // Reset input và rating sau khi gửi bình luận thành công
       setNewComment('');
       setRating(0);
-  
+
       // Đóng box review
       handleCloseReviewBox();
-  
+
       // Hiển thị thông báo "Cảm ơn bạn đã đánh giá"
       toast.success('Cảm ơn bạn đã đánh giá!');
       setShowThankYouMessage(true);
-  
+
       // Đặt thời gian để ẩn thông báo sau vài giây (ví dụ 3 giây)
       setTimeout(() => {
         setShowThankYouMessage(false);
@@ -279,11 +285,13 @@ function UserOrder() {
       // Hiển thị lỗi từ backend nếu có
       console.error('Error submitting comment:', err);
       toast.error(
-        err?.response?.data?.message || err.message || 'Có lỗi xảy ra khi gửi bình luận.'
+        err?.response?.data?.message ||
+          err.message ||
+          'Có lỗi xảy ra khi gửi bình luận.'
       );
     }
   };
-  
+
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
     setUserId(storedUser?.user?._id || null);
@@ -427,10 +435,11 @@ function UserOrder() {
               <button
                 key={tab.id}
                 onClick={() => setSelectedTab(tab.id)}
-                className={`px-2 py-2 text-[15px] sm:px-4 ${selectedTab === tab.id
-                  ? 'border-b-2 border-red-500 text-red-600'
-                  : ''
-                  }`}
+                className={`px-2 py-2 text-[15px] sm:px-4 ${
+                  selectedTab === tab.id
+                    ? 'border-b-2 border-red-500 text-red-600'
+                    : ''
+                }`}
               >
                 {tab.label}{' '}
                 <span className="count text-red-600">
@@ -439,10 +448,11 @@ function UserOrder() {
                       if (tab.id === 'all') return true; // Tab 'Tất cả' đếm tất cả các đơn hàng
                       return order.status === tab.id; // Tab cụ thể đếm theo trạng thái
                     }).length > 0 &&
-                    `(${orders.filter(order => {
-                      if (tab.id === 'all') return true;
-                      return order.status === tab.id;
-                    }).length
+                    `(${
+                      orders.filter(order => {
+                        if (tab.id === 'all') return true;
+                        return order.status === tab.id;
+                      }).length
                     })`}
                 </span>
               </button>
@@ -461,34 +471,35 @@ function UserOrder() {
                   <div key={order._id} className="">
                     <div className="mb-0.5 flex items-center justify-between rounded-sm border-[0.5px] border-gray-200 bg-white px-6 py-3">
                       <span
-                        className={`rounded-full px-4 py-1 text-sm font-medium ${order.status === 'canceled' ||
+                        className={`rounded-full px-4 py-1 text-sm font-medium ${
+                          order.status === 'canceled' ||
                           order.status === 'canceled_complaint'
-                          ? 'bg-red-200 text-red-600'
-                          : order.status === 'pending' ||
-                            order.status === 'refund_initiated'
-                            ? 'bg-yellow-200 text-yellow-700'
-                            : order.status === 'confirmed'
-                              ? 'bg-blue-200 text-blue-700'
-                              : order.status === 'shipped' ||
-                                order.status === 'received'
-                                ? 'bg-indigo-200 text-indigo-700'
-                                : order.status === 'delivered' ||
-                                  order.status === 'refund_done'
-                                  ? 'bg-green-200 text-green-700'
-                                  : order.status === 'complaint'
-                                    ? 'bg-purple-500 text-white'
-                                    : order.status === 'refund_in_progress' ||
-                                      order.status ===
-                                      'exchange_in_progress'
-                                      ? 'bg-orange-200 text-orange-700'
-                                      : order.status === 'refund_completed' ||
-                                        order.status ===
-                                        'exchange_completed'
-                                        ? 'bg-teal-200 text-teal-700'
-                                        : order.status === 'pendingPayment'
-                                          ? 'bg-gray-200 text-gray-700'
-                                          : ''
-                          }`}
+                            ? 'bg-red-200 text-red-600'
+                            : order.status === 'pending' ||
+                                order.status === 'refund_initiated'
+                              ? 'bg-yellow-200 text-yellow-700'
+                              : order.status === 'confirmed'
+                                ? 'bg-blue-200 text-blue-700'
+                                : order.status === 'shipped' ||
+                                    order.status === 'received'
+                                  ? 'bg-indigo-200 text-indigo-700'
+                                  : order.status === 'delivered' ||
+                                      order.status === 'refund_done'
+                                    ? 'bg-green-200 text-green-700'
+                                    : order.status === 'complaint'
+                                      ? 'bg-purple-500 text-white'
+                                      : order.status === 'refund_in_progress' ||
+                                          order.status ===
+                                            'exchange_in_progress'
+                                        ? 'bg-orange-200 text-orange-700'
+                                        : order.status === 'refund_completed' ||
+                                            order.status ===
+                                              'exchange_completed'
+                                          ? 'bg-teal-200 text-teal-700'
+                                          : order.status === 'pendingPayment'
+                                            ? 'bg-gray-200 text-gray-700'
+                                            : ''
+                        }`}
                       >
                         {getStatusLabel(order.status)}
                       </span>
@@ -528,11 +539,12 @@ function UserOrder() {
                                 amount={item.price * item.quantity}
                               />
                             </p>
-
                             {isReviewBoxVisible && selectedProduct && (
-                              <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm">
-                                <div className="relative z-50 mt-20 w-full max-w-3xl rounded-lg bg-white p-6 shadow-lg">
-                                  <h3 className="text-lg font-semibold">Đánh giá sản phẩm</h3>
+                              <div className="fixed inset-0 flex items-center justify-center">
+                                <div className="relative z-auto mt-28 h-[440px] w-full max-w-xl rounded-lg border bg-white p-6">
+                                  <h3 className="text-lg font-semibold">
+                                    Đánh giá sản phẩm
+                                  </h3>
                                   <div className="mb-0.5 rounded-sm border-gray-200 bg-white px-6 py-3">
                                     <div className="flex items-center space-x-4">
                                       <img
@@ -541,12 +553,19 @@ function UserOrder() {
                                         className="h-16 w-16 rounded-lg object-cover shadow-sm"
                                       />
                                       <div className="flex-1">
-                                        <p className="text-xl font-semibold text-gray-800">{selectedProduct.name}</p>
-                                        <p className="text-sm text-gray-600">
-                                          Phân loại hàng: Màu: {selectedProduct.color || ''}{' '}
-                                          {selectedProduct.size ? `, Size: ${selectedProduct.size}` : ''}
+                                        <p className="text-xl font-semibold text-gray-800">
+                                          {selectedProduct.name}
                                         </p>
-                                        <p className="font-medium text-gray-800">x{selectedProduct.quantity}</p>
+                                        <p className="text-sm text-gray-600">
+                                          Phân loại hàng: Màu:{' '}
+                                          {selectedProduct.color || ''}{' '}
+                                          {selectedProduct.size
+                                            ? `, Size: ${selectedProduct.size}`
+                                            : ''}
+                                        </p>
+                                        <p className="font-medium text-gray-800">
+                                          x{selectedProduct.quantity}
+                                        </p>
                                       </div>
                                     </div>
                                   </div>
@@ -555,10 +574,10 @@ function UserOrder() {
                                       <div className="select-star-rating">
                                         <span className="star-rating flex">
                                           Chất lượng sản phẩm:
-                                          {[1, 2, 3, 4, 5].map((star) => (
+                                          {[1, 2, 3, 4, 5].map(star => (
                                             <StarSolid
                                               key={star}
-                                              className={`cursor-pointer ${rating >= star ? 'text-orange-300' : 'text-orange-200'}`}
+                                              className={`cursor-pointer ${rating >= star ? 'text-yellow-400' : 'text-yellow-200'}`}
                                               onClick={() => setRating(star)}
                                             />
                                           ))}
@@ -569,10 +588,12 @@ function UserOrder() {
                                           id="form-input-review"
                                           className="form-control form-control_gray"
                                           placeholder="Đánh giá của bạn"
-                                          cols={30}
-                                          rows={8}
+                                          cols={20}
+                                          rows={5}
                                           value={newComment}
-                                          onChange={(e) => setNewComment(e.target.value)}
+                                          onChange={e =>
+                                            setNewComment(e.target.value)
+                                          }
                                         />
                                       </div>
                                     </form>
@@ -602,18 +623,22 @@ function UserOrder() {
                             </div>
                           )}
                           {order.status === 'delivered' &&
-                            (!reviewedProductIds || reviewedProductIds.length === 0 ||
+                            (!reviewedProductIds ||
+                              reviewedProductIds.length === 0 ||
                               !reviewedProductIds.some(
-                                reviewed => reviewed.orderId === order._id && reviewed.productSlug === item.slug
+                                reviewed =>
+                                  reviewed.orderId === order._id &&
+                                  reviewed.productSlug === item.slug
                               )) && (
                               <button
-                                onClick={() => handleOpenReviewBox(order._id, item)}
+                                onClick={() =>
+                                  handleOpenReviewBox(order._id, item)
+                                }
                                 className="mr-2 rounded-md border-[1px] border-[#ee4d2d] px-4 py-2 text-[#ee4d2d] hover:border-red-600"
                               >
                                 Đánh giá sản phẩm
                               </button>
                             )}
-
                         </div>
                       ))}
                       <div className="border-t border-dotted border-gray-200">
@@ -722,31 +747,59 @@ function UserOrder() {
             </h2>
             <div className="flex flex-col space-y-4">
               <button
-                onClick={() => window.location.href = `/refund/${userId}/${selectedOrderId}`}
+                onClick={() =>
+                  (window.location.href = `/refund/${userId}/${selectedOrderId}`)
+                }
                 className="flex w-full items-center rounded-lg border border-red-500 p-4 text-left hover:bg-red-50"
               >
-                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-red-100 text-red-500">
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-6.364 6.364m0 0l-6.364-6.364m6.364 6.364v6.364M21 3l-9 18-9-18" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-500">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M18.364 5.636l-6.364 6.364m0 0l-6.364-6.364m6.364 6.364v6.364M21 3l-9 18-9-18"
+                    />
                   </svg>
                 </div>
                 <div className="ml-4">
                   <p className="font-medium text-gray-800">
-                    Tôi đã nhận hàng nhưng hàng có vấn đề (bể vỡ, sai mẫu, hàng lỗi, khác mô tả...) - Miễn ship hoàn về
+                    Tôi đã nhận hàng nhưng hàng có vấn đề (bể vỡ, sai mẫu, hàng
+                    lỗi, khác mô tả...) - Miễn ship hoàn về
                   </p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Lưu ý: Trường hợp yêu cầu Trả Hàng Hoàn tiền của bạn được chấp nhận, Voucher có thể sẽ không được hoàn lại
+                    Lưu ý: Trường hợp yêu cầu Trả Hàng Hoàn tiền của bạn được
+                    chấp nhận, Voucher có thể sẽ không được hoàn lại
                   </p>
                 </div>
               </button>
 
               <button
-                onClick={() => window.location.href = `/exchange/${userId}/${selectedOrderId}`}
+                onClick={() =>
+                  (window.location.href = `/exchange/${userId}/${selectedOrderId}`)
+                }
                 className="flex w-full items-center rounded-lg border border-orange-500 p-4 text-left hover:bg-orange-50"
               >
-                <div className="flex items-center justify-center h-10 w-10 rounded-full bg-orange-100 text-orange-500">
-                  <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-500">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                 </div>
                 <div className="ml-4">
@@ -754,7 +807,9 @@ function UserOrder() {
                     Tôi chưa nhận hàng/nhận thiếu hàng
                   </p>
                   <p className="mt-1 text-sm text-gray-600">
-                    Lưu ý: Trường hợp yêu cầu Trả Hàng Hoàn tiền của bạn được chấp nhận, Shopee Xu, Voucher, Phí vận chuyển có thể không được hoàn lại
+                    Lưu ý: Trường hợp yêu cầu Trả Hàng Hoàn tiền của bạn được
+                    chấp nhận, Shopee Xu, Voucher, Phí vận chuyển có thể không
+                    được hoàn lại
                   </p>
                 </div>
               </button>
@@ -770,7 +825,6 @@ function UserOrder() {
             </div>
           </div>
         </div>
-
       )}
     </div>
   );

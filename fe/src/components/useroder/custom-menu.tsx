@@ -9,15 +9,16 @@ import {
 const CustomUser = () => {
   const storedData = JSON.parse(localStorage.getItem('user') || '{}');
   const username = storedData?.user?.username || 'Không có tên người dùng';
+  const avatar = storedData?.user?.avatar || 'Không có tên người dùng';
   return (
     <div className="h-full w-1/4">
       <div className="flex flex-col items-center">
         <div className="flex flex-col gap-4 rounded-lg">
           <div className="flex items-center gap-3">
             <img
-              src="/admin.jpg"
+              src={avatar}
               alt="User avatar"
-              className="h-12 w-12 rounded-full"
+              className="h-12 w-12 rounded-full object-cover"
             />
             <div>
               <h4 className="text-lg font-bold">{username}</h4>

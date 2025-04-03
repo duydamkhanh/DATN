@@ -1,9 +1,17 @@
 import instance from '@/api/axiosIntance';
-import CurrencyVND from '@/components/config/vnd';
-import Header from '@/components/layoutAdmin/header/header';
+import CurrencyVND, { CreateSlugByTitle } from '@/components/config/vnd';
 import NewHeader from '@/components/layoutAdmin/header/new-header';
+import { getStatusIndex } from '@/components/ui/status-helper';
+import useCheckoutMutation from '@/data/oder/useOderMutation';
+import useOrderDetail from '@/data/oder/useOrderDetail';
 import { toast } from '@medusajs/ui';
-import { createFileRoute, useParams } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  createFileRoute,
+  Link,
+  useLocation,
+  useParams,
+} from '@tanstack/react-router';
 import { format } from 'date-fns';
 import React, { useEffect, useState } from 'react';
 export const Route = createFileRoute(
@@ -16,33 +24,42 @@ function OrderDetail() {
   const { id } = useParams({
     from: '/dashboard/_layout/detailorder/$id/detailorder',
   });
-  const [orderDetail, setOrderDetail] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isRevenueVisible, setRevenueVisible] = useState(false);
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  // const status = location.state?.status || 'all-delivery';
+  const select = location.state?.selectedGroup || 'delivery';
   const [currentStatus, setCurrentStatus] = useState(0);
+  const { updateOrderStatus } = useCheckoutMutation();
+  const [selectedGroup, setSelectedGroup] = useState(select || 'delivery');
+  const [Loading, setIsLoading] = useState(false);
+  const [statusIndex3, setStatusIndex] = useState(
+    getStatusIndex(currentStatus)
+  );
 
-  const toggleRevenueVisibility = () => {
-    setRevenueVisible(!isRevenueVisible);
-  };
+  const { data: orderDetail, isLoading, refetch } = useOrderDetail(id);
+  const deliveryStatuses = [
+    { value: 'pendingPayment', label: 'Chờ thanh toán' },
+    { value: 'pending', label: 'Chờ xác nhận' },
+    { value: 'shipped', label: 'Đang vận chuyển' },
+    { value: 'received', label: 'Giao hàng thành công' },
+    { value: 'delivered', label: 'Hoàn thành đơn hàng' },
+    { value: 'canceled', label: 'Đã hủy' },
+  ];
 
-  useEffect(() => {
-    const fetchOrderDetail = async () => {
-      try {
-        setLoading(true);
-        const response = await instance.get(`/orders/${id}/admin`);
-        setOrderDetail(response.data);
-      } catch (err) {
-        console.error('Failed to fetch order:', err);
-        toast.error('Không thể tải đơn hàng.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const complaintStatuses = [
+    { value: 'complaint', label: 'Đang khiếu nại' },
+    { value: 'refund_in_progress', label: 'Đang hoàn trả hàng' },
+    { value: 'refund_completed', label: 'Hoàn trả thành công' },
+    { value: 'exchange_in_progress', label: 'Đang đổi trả hàng' },
+    { value: 'exchange_completed', label: 'Đổi trả thành công' },
+    { value: 'delivered', label: 'Hủy khiếu nại' },
+  ];
+  const refundStatuses = [
+    { value: 'refund_initiated', label: 'Chờ hoàn tiền' },
+    { value: 'refund_done', label: 'Đã hoàn tiền' },
+  ];
 
-    fetchOrderDetail();
-  }, [id]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-lg font-semibold text-gray-600">
@@ -75,7 +92,7 @@ function OrderDetail() {
     discount,
     receivedAt,
     shippingMessageDisplay,
-  } = orderDetail;
+  } = orderDetail || {};
 
   const statusOrder = {
     pending: 0,
@@ -201,6 +218,86 @@ function OrderDetail() {
       fullDateTime: getCurrentDateTime(),
     },
   ];
+  const statusList = [
+    'Đã Đặt Hàng',
+    'Xác nhận',
+    'Đang vận chuyển',
+    'Giao hàng',
+    'Đã nhận hàng',
+  ];
+
+  // Lấy chỉ số trạng thái hiện tại một lần duy nhất
+  const statusIndex1 = getStatusIndex(statusList);
+
+  const handleStatusChange = (orderId, newStatus, currentStatus) => {
+    const validStatuses =
+      selectedGroup === 'delivery'
+        ? deliveryStatuses.map(status => status.value)
+        : selectedGroup === 'complaint'
+          ? complaintStatuses.map(status => status.value)
+          : selectedGroup === 'refund'
+            ? refundStatuses.map(status => status.value)
+            : [];
+
+    if (!validStatuses.includes(newStatus)) {
+      toast.error('Trạng thái không hợp lệ cho nhóm hiện tại.');
+      return;
+    }
+
+    if (
+      currentStatus === 'complaint' &&
+      !['refund_in_progress', 'exchange_in_progress', 'received'].includes(
+        newStatus
+      )
+    ) {
+      if (
+        (currentStatus === 'refund_in_progress' &&
+          newStatus !== 'refund_completed') ||
+        (currentStatus === 'refund_completed' &&
+          newStatus !== 'refund_in_progress') ||
+        (currentStatus === 'exchange_in_progress' &&
+          newStatus !== 'exchange_completed') ||
+        (currentStatus === 'exchange_completed' &&
+          newStatus !== 'exchange_in_progress')
+      ) {
+        toast.error(
+          'Trạng thái không hợp lệ trong quá trình hoàn trả/đổi trả.'
+        );
+        return;
+      }
+    }
+
+    setIsLoading(true);
+
+    // Cập nhật trạng thái cho đơn hàng
+    updateOrderStatus.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: async () => {
+          setIsLoading(false);
+          // Cập nhật lại trạng thái hiển thị hoặc chỉ số trạng thái nếu cần
+          const newStatusIndex = getStatusIndex(statusIndex1); // Hàm tính toán chỉ số trạng thái
+          setStatusIndex(newStatusIndex);
+          refetch();
+          toast.success('Cập nhật trạng thái thành công.');
+        },
+        onError: error => {
+          setIsLoading(false);
+          toast.error(
+            'Khách hàng chưa xác nhận đã nhận hàng. Bạn không thể hoàn thành đơn hàng.'
+          );
+        },
+      }
+    );
+  };
+
+  const isNextDeliveryStatusValid = (currentStatus, nextStatus) => {
+    const deliveryOrder = ['pending', 'shipped', 'received', 'delivered'];
+    const currentIndex = deliveryOrder.indexOf(currentStatus);
+    const nextIndex = deliveryOrder.indexOf(nextStatus);
+
+    return nextIndex === currentIndex + 1;
+  };
 
   if (paymentMethod === 'online') {
     statusOrder2.forEach(order => {
@@ -246,18 +343,74 @@ function OrderDetail() {
           ]}
         />
       </div>
+      {Loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <div className="flex items-center justify-center space-x-2 rounded-lg bg-white p-6 py-4 shadow-lg">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-t-4 border-solid border-gray-200 border-t-indigo-600" />
+            <p className="text-gray-500">Đang cập nhật...</p>
+          </div>
+        </div>
+      )}
       <div className="max-h-[600px] overflow-y-scroll">
         <div className="min-h-screen bg-gray-50 p-3">
           <div className="mb-2 rounded-lg bg-white p-4 shadow-md">
-            <h2 className="mb-4 text-lg font-bold">Theo dõi đơn hàng</h2>
+            <div className="flex justify-between">
+              <h2 className="mb-4 text-lg font-bold">Theo dõi đơn hàng</h2>
+              <div>
+                <select
+                  value={status || ''}
+                  onChange={e => handleStatusChange(id, e.target.value, status)}
+                  className="w-auto min-w-[220px] cursor-pointer rounded-xl border border-gray-300 bg-gradient-to-r from-white to-gray-100 px-4 py-2 text-sm text-gray-800 transition-all hover:shadow-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-400"
+                >
+                  {(selectedGroup === 'delivery'
+                    ? deliveryStatuses
+                    : selectedGroup === 'complaint'
+                      ? complaintStatuses
+                      : refundStatuses
+                  )?.map(statusItem => {
+                    const isDisabled =
+                      statusItem?.value &&
+                      (status === 'pendingPayment' ||
+                        status === 'canceled' ||
+                        status === 'canceled_complaint' ||
+                        status === 'refund_completed' ||
+                        status === 'exchange_completed' ||
+                        (selectedGroup === 'delivery' &&
+                          !(
+                            isNextDeliveryStatusValid(
+                              status,
+                              statusItem.value
+                            ) ||
+                            (status === 'pending' &&
+                              statusItem.value === 'canceled')
+                          )) ||
+                        (status === 'refund_in_progress' &&
+                          statusItem.value !== 'refund_completed') ||
+                        (status === 'exchange_in_progress' &&
+                          statusItem.value !== 'exchange_completed') ||
+                        (status === 'complaint' &&
+                          statusItem.value !== 'refund_in_progress' &&
+                          statusItem.value !== 'exchange_in_progress' &&
+                          statusItem.value !== 'delivered') ||
+                        (status === 'refund_done' &&
+                          statusItem.value === 'refund_initiated'));
+
+                    return (
+                      <option
+                        key={statusItem?.value || Math.random()}
+                        value={statusItem?.value || ''}
+                        disabled={isDisabled}
+                        className="bg-white px-4 py-2 text-gray-800 transition-all hover:bg-blue-100 disabled:bg-gray-200 disabled:text-gray-400"
+                      >
+                        {statusItem?.label || 'Không có dữ liệu'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
             <div className="flex w-full items-center justify-between">
-              {[
-                'Đã Đặt Hàng',
-                'Xác nhận',
-                'Đang giao hàng',
-                'Giao hàng',
-                'Đã nhận hàng',
-              ].map((statusText, index, arr) => {
+              {statusList.map((statusText, index, arr) => {
                 if (statusIndex === 12 || statusIndex === 13) {
                   if (index < 5) {
                     return null;
@@ -360,7 +513,11 @@ function OrderDetail() {
                             alt={item.name}
                             className="h-12 w-12 rounded-md"
                           />
-                          {item.name}
+                          <Link
+                            to={`/dashboard/products/${CreateSlugByTitle(item.name)}/viewdetail`}
+                          >
+                            {item.name}
+                          </Link>
                         </td>
                         <td className="py-2">
                           Phân loại: {item.color} / {item.size}
@@ -413,12 +570,12 @@ function OrderDetail() {
                     : ''}
                 </span>
               </p>
-              <p className="flex justify-between font-semibold">
+              {/* <p className="flex justify-between font-semibold">
                 Tổng đơn hàng:{' '}
                 <span className="font-semibold text-red-500">
                   <CurrencyVND amount={totalPrice} />
                 </span>
-              </p>
+              </p> */}
             </div>
           </div>
 
