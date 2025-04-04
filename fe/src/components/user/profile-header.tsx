@@ -19,13 +19,19 @@ const ProfileHeader = () => {
 
   const storedData = JSON.parse(localStorage.getItem('user') || '{}');
   const username = storedData?.user?.username || 'Không có tên người dùng';
+  const avatar = storedData?.user?.avatar || 'Không có tên người dùng';
 
   return (
     <div className="hidden items-center gap-5 lg:flex">
       <DropdownMenu>
         <DropdownMenu.Trigger asChild>
           <button type="button" className="flex items-center gap-3 text-left">
-            <Avatar variant="squared" src="/admin.jpg" fallback="" />
+            <Avatar
+              className="object-cover"
+              variant="rounded"
+              src={avatar}
+              fallback=""
+            />
             <div>
               <p className="txt-compact-small-plus text-ui-code-bg-base">
                 {username}
@@ -40,7 +46,7 @@ const ProfileHeader = () => {
           <DropdownMenu.Item>
             <Link to="/" className="flex">
               <ArrowDownRightMini className="mr-2" />
-              Website
+              Về Website
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.Separator />

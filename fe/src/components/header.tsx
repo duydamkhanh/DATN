@@ -90,6 +90,7 @@ const Header = () => {
   // End-Phần menu của user
   // Đọc dữ liệu từ localStorage
   const storedData = JSON.parse(localStorage.getItem('user'));
+  const avatar = storedData?.user?.avatar || 'Không có tên người dùng';
 
   // Truy xuất tên người dùng (username)
   const username = storedData?.user?.username || 'Không có tên người dùng';
@@ -201,7 +202,7 @@ const Header = () => {
                   </Link>
                 </li>
                 <li className="navigation__item">
-                  <Link to="/" className="navigation__link">
+                  <Link to="/contact" className="navigation__link">
                     Liên hệ
                   </Link>
                 </li>
@@ -372,7 +373,7 @@ const Header = () => {
                         <div className="flex flex-col items-center justify-center px-3 py-4">
                           <button className="js-close-aside btn-close-lg btn-close-aside ms-auto mt-[-50px]" />
                           <img
-                            src="https://res.cloudinary.com/dlzhmxsqp/image/upload/v1716288330/e_commerce/s4nl3tlwpgafsvufcyke.jpg"
+                            src={avatar}
                             alt=""
                             className="mt-5 h-16 w-16 rounded-full border-2 border-gray-200 object-cover"
                           />
