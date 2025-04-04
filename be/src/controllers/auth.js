@@ -130,8 +130,7 @@ const signin = async (req, res) => {
     if (user.status !== "ACTIVE") {
       return res.status(403).json({
         field: "status",
-        message:
-          "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+        message: "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
       });
     }
 
@@ -161,6 +160,7 @@ const signin = async (req, res) => {
     });
   }
 };
+
 
 let EMAIL = null;
 
@@ -277,6 +277,7 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+
 const getAllCustomers = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -293,40 +294,25 @@ const getAllCustomers = async (req, res) => {
         const orders = await Order.find({ userId: customer._id });
 
         // Nếu không có đơn hàng hoặc không có đơn hàng thành công, bỏ qua khách hàng này
-        if (
-          orders.length === 0 ||
-          orders.filter((order) => order.status === "delivered").length === 0
-        ) {
+        if (orders.length === 0 || orders.filter(order => order.status === "delivered").length === 0) {
           return null; // Trả về null nếu khách hàng chưa mua hàng
         }
 
         // Tính toán các thông tin cần thiết
         const totalOrders = orders.length; // Tổng số đơn hàng
-        const canceledOrders = orders.filter(
-          (order) => order.status === "canceled"
-        ).length; // Số đơn hủy
-        const successfulOrders = orders.filter(
-          (order) => order.status === "delivered"
-        ).length; // Số đơn thành công
-        const pendingOrders = orders.filter(
-          (order) => order.status === "pending"
-        ).length; // Số đơn đang chờ
+        const canceledOrders = orders.filter(order => order.status === "canceled").length; // Số đơn hủy
+        const successfulOrders = orders.filter(order => order.status === "delivered").length; // Số đơn thành công
+        const pendingOrders = orders.filter(order => order.status === "pending").length; // Số đơn đang chờ
 
         // Tính tổng số tiền từ các đơn hàng thành công
         const totalAmount = orders
-          .filter((order) => order.status === "delivered")
+          .filter(order => order.status === "delivered")
           .reduce((sum, order) => sum + (order.totalPrice || 0), 0);
 
         return {
           _id: customer._id,
-          name:
-            customer.name ||
-            customer.username ||
-            customer.fullName ||
-            "Unknown", // Thử các trường khác nhau
-          avatar:
-            customer.avatar ||
-            "https://res.cloudinary.com/dfjsl3isc/image/upload/v1736418158/products/anh.png", // Avatar mặc định nếu không có
+          name: customer.name || customer.username || customer.fullName || "Unknown", // Thử các trường khác nhau
+          avatar: customer.avatar || "https://res.cloudinary.com/dfjsl3isc/image/upload/v1736418158/products/anh.png", // Avatar mặc định nếu không có
           totalOrders, // Số đơn hàng
           canceledOrders, // Số đơn hủy hàng
           successfulOrders, // Số đơn hàng thành công
@@ -338,9 +324,7 @@ const getAllCustomers = async (req, res) => {
     );
 
     // Lọc bỏ các khách hàng không có đơn hàng thành công
-    const filteredCustomerData = customerData.filter(
-      (customer) => customer !== null
-    );
+    const filteredCustomerData = customerData.filter(customer => customer !== null);
 
     // Trả về kết quả
     res.status(200).json({
@@ -361,6 +345,8 @@ const getAllCustomers = async (req, res) => {
     });
   }
 };
+
+
 
 const getUserInfo = async (req, res) => {
   // Lấy userId từ header (ví dụ: từ 'user-id' header)
@@ -644,8 +630,7 @@ const updateUserStatus = async (req, res) => {
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         field: "status",
-        message:
-          "Trạng thái không hợp lệ! Chỉ chấp nhận 'ACTIVE' hoặc 'BLOCKED'.",
+        message: "Trạng thái không hợp lệ! Chỉ chấp nhận 'ACTIVE' hoặc 'BLOCKED'.",
       });
     }
 
