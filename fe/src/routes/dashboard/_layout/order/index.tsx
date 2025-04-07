@@ -157,7 +157,9 @@ function OrderList() {
         },
         onError: error => {
           setIsLoading(false);
-          toast.error(`Cập nhật trạng thái thất bại: ${error.message}`);
+          toast.warning(
+            'Khách hàng chưa xác nhận đã nhận hàng. Bạn không thể hoàn thành đơn hàng.'
+          );
         },
       }
     );
@@ -205,7 +207,6 @@ function OrderList() {
     return false;
   });
 
-  console.log('Total Items:', meta?.totalItems);
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
@@ -338,7 +339,7 @@ function OrderList() {
                             })
                           }
                         >
-                          View Details
+                          Chi tiết
                         </DropdownMenu.Item>
                       </DropdownMenu.Content>
                     </DropdownMenu>

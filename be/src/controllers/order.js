@@ -70,8 +70,8 @@ const createOrder = async (req, res) => {
       if (!user || !user.email) {
         throw new Error('User not found or email is missing.');
       }
-      const email = user.email;
-      Mail.sendOrderConfirmation(email, order);
+      // const email = user.email;
+      // Mail.sendOrderConfirmation(email, order);
 
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode });
@@ -327,6 +327,21 @@ const updateOrder = async (req, res) => {
         .status(StatusCodes.NOT_FOUND)
         .json({ error: "Order not found" });
     }
+
+    // Kiểm tra vai trò của người dùng
+    const Id = new ObjectId(order.userId);
+    const user = await User.findOne({ _id: Id });
+
+    if (!user || !user.email) {
+      throw new Error('User not found or email is missing.');
+    }
+
+    // Nếu người dùng là admin, không cho phép cập nhật trạng thái 'delivered'
+    if (user.role === 'admin' && status === 'delivered') {
+      return res.status(StatusCodes.FORBIDDEN).json({ error: "Admins cannot update the status to 'delivered'" });
+    }
+
+    // Logic xử lý các trạng thái khác của đơn hàng
     if ((status === "refund_completed" && order.status !== "refund_completed") || 
         (status === "canceled" && order.status !== "canceled")) {
       for (const item of order.items) {
@@ -347,6 +362,7 @@ const updateOrder = async (req, res) => {
         }
       } 
     }
+
     if (status === "delivered" && order.status !== "delivered") {
       order.paymentStatus = "pending";
     }
@@ -356,7 +372,7 @@ const updateOrder = async (req, res) => {
     if (status === "canceled" && order.status !== "canceled") {
       if(order.paymentMethod === 'online'){
         order.paymentStatus = "pendingRefund";
-        status = 'refund_initiated'
+        status = 'refund_initiated';
       }
     }
     if (order.status !== status) {
@@ -365,13 +381,7 @@ const updateOrder = async (req, res) => {
       await order.save();
     }
 
-    const Id = new ObjectId(order.userId);
-    const user = await User.findOne({ _id: Id });
-
-    if (!user || !user.email) {
-      throw new Error('User not found or email is missing.');
-    }
-    
+    // Gửi email (đã chú thích)
     // const email = user.email;
     // if (email) {
     //   await Mail.sendOrderStatusUpdate(email, order);
@@ -387,6 +397,7 @@ const updateOrder = async (req, res) => {
       .json({ error: error.message });
   }
 };
+
 
 const deleteOrder = async (req, res) => {
   try {
