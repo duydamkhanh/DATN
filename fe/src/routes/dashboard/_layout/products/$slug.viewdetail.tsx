@@ -48,13 +48,7 @@ function DetailProduct() {
       <div className="fixed left-0 right-0 top-16 z-10 md:relative md:left-auto md:right-auto md:top-0">
         <NewHeader
           breadcrumbs={[
-            {
-              title: 'Danh sách sản phẩm',
-              href: '/dashboard/products',
-            },
-            {
-              title: 'Chi tiết sản phẩm',
-            },
+            
           ]}
         />
       </div>
