@@ -3,7 +3,8 @@ const CreateSlugByTitle = require("../config/slug");
 const addPost = async (req, res) => {
   try {
     // Lấy dữ liệu từ req.body
-    const { title, content, author, tags, thumbnail } = req.body;
+    const { title, content, author, tags, thumbnail, description, gallery } =
+      req.body;
 
     // Kiểm tra xem dữ liệu bắt buộc có đủ không
     if (!title || !content || !author) {
@@ -15,14 +16,19 @@ const addPost = async (req, res) => {
     // Tạo slug từ title
     const slug = CreateSlugByTitle(title);
 
+    // Kiểm tra nếu thumbnail không tồn tại, sử dụng giá trị mặc định
+    const thumbnailUrl = thumbnail || ""; // Nếu không có thumbnail, để trống hoặc có thể là URL mặc định
+
     // Tạo đối tượng bài viết mới
     const post = new Post({
       title,
       content,
       author,
       tags, // Mảng tags nếu có
-      thumbnail, // Ảnh đại diện nếu có
+      thumbnail: thumbnailUrl, // Ảnh đại diện, nếu không có sẽ là chuỗi trống
       slug, // Slug tự tạo từ tiêu đề
+      gallery,
+      description,
       createdAt: new Date(), // Tạo thời gian hiện tại
       updatedAt: new Date(), // Lưu thời gian chỉnh sửa gần nhất
     });
@@ -42,6 +48,7 @@ const addPost = async (req, res) => {
       .json({ message: error.message || "Có lỗi xảy ra khi tạo bài viết." });
   }
 };
+
 const getAllPosts = async (req, res) => {
   try {
     // Lấy tất cả bài viết từ cơ sở dữ liệu
@@ -155,6 +162,26 @@ const uploadBlog = async (req, res) => {
   res.json(file.path);
 };
 
+const uploadGalleryBlog = async (req, res) => {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const uploadedFiles = [];
+
+    for (const file of files) {
+      uploadedFiles.push(file.path);
+    }
+
+    res.json(uploadedFiles);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" + error });
+  }
+};
+
 module.exports = {
   addPost,
   getAllPosts,
@@ -162,4 +189,5 @@ module.exports = {
   getRelatedPostsByTag,
   deletePost,
   uploadBlog,
+  uploadGalleryBlog,
 };

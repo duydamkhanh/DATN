@@ -7,6 +7,7 @@ const {
   getRelatedPostsByTag,
   deletePost,
   uploadBlog,
+  uploadGalleryBlog,
 } = require("../controllers/blog");
 const router = express.Router();
 
@@ -20,4 +21,9 @@ router.get(`/posts`, getAllPosts);
 router.get(`/detailblog/:slug`, getPostBySlug);
 router.get(`/relatedposts/:tag`, getRelatedPostsByTag);
 router.delete(`/posts/:postId`, deletePost);
+router.post(
+  `/upload-gallery-blog`,
+  upload.array("photos", 10),
+  uploadGalleryBlog
+);
 module.exports = router;
