@@ -5,7 +5,11 @@ const PostSchema = new mongoose.Schema({
   content: { type: String, required: true },
   author: { type: String, required: true },
   tags: { type: [String], default: [] }, // Mảng tag
-  thumbnail: { type: String, required: true }, // URL ảnh đại diện
+  thumbnail: { type: String }, // URL ảnh đại diện
+  gallery: {
+    type: [String],
+  },
+  description: { type: String },
   slug: { type: String, unique: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
