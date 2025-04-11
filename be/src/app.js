@@ -7,7 +7,7 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 
 // Import routes
-// const message = require("./routers/chatRoutes");
+const message = require("./routers/chatRoutes");
 const cartRouter = require("./routers/cart");
 const productRouter = require("./routers/product");
 const categoryRouter = require("./routers/category");
@@ -74,7 +74,7 @@ app.use("/api", shippingRoutes);
 app.use("/api", couponRoutes);
 app.use("/api", commentRouter);
 app.use("/api", paymentRoutes);
-// app.use("/api", message);
+app.use("/api", message);
 app.use("/api", blogRoutes);
 app.use("/api", customerRoutes);
 // app.use("/api", locationRoutes);
