@@ -54,16 +54,25 @@ const createOrder = async (req, res) => {
         );
       
         if (variant) {
-          await Product.updateOne(
+          const product = await Product.findOne(
             { _id: item.productId, "variants.sku": item.variantId },
-            { $inc: { "variants.$.countInStock": -item.quantity } },
-            { new: true }
+            { "variants.$": 1 }
           );
-        } 
+        
+          const currentStock = product?.variants[0]?.countInStock || 0;
+        
+          if (currentStock >= item.quantity) {
+            await Product.updateOne(
+              { _id: item.productId, "variants.sku": item.variantId },
+              { $inc: { "variants.$.countInStock": -item.quantity } }
+            );
+          } else {
+            // Báo lỗi sang FE
+            throw new Error(`Sản phẩm với SKU ${item.variantId} chỉ còn ${currentStock} sản phẩm trong kho.`);
+          }
+        }
         
       }
-
-     
         const Id = new ObjectId(order.userId); // Chuyển sang ObjectId
         const user = await User.findOne({ _id: Id });
 
