@@ -1,4 +1,5 @@
 type Post = {
+  [x: string]: ReactNode;
   id: string; // Unique identifier for the post
   title: string; // Title of the post
   content: string; // Content of the post
@@ -22,4 +23,16 @@ type MetaData = {
   totalPages: number; // Total number of pages
   currentPage: number; // Current page number
   pageSize: number; // Number of items per page
+};
+
+type Blog = {
+  title: string;
+  content: string;
+  author: string;
+  tags: string[];
+  thumbnail: string;
+  description: string;
+  slug: string;
+  createdAt: string; // Changed to string to ensure ISO format
+  updatedAt: string;
 };
