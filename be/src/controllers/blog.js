@@ -3,8 +3,7 @@ const CreateSlugByTitle = require("../config/slug");
 const addPost = async (req, res) => {
   try {
     // Lấy dữ liệu từ req.body
-    const { title, content, author, tags, thumbnail, description, gallery } =
-      req.body;
+    const { title, content, author, tags, thumbnail, description, gallery } = req.body;
 
     // Kiểm tra xem dữ liệu bắt buộc có đủ không
     if (!title || !content || !author) {
@@ -17,7 +16,7 @@ const addPost = async (req, res) => {
     const slug = CreateSlugByTitle(title);
 
     // Kiểm tra nếu thumbnail không tồn tại, sử dụng giá trị mặc định
-    const thumbnailUrl = thumbnail || ""; // Nếu không có thumbnail, để trống hoặc có thể là URL mặc định
+    const thumbnailUrl = thumbnail || ''; // Nếu không có thumbnail, để trống hoặc có thể là URL mặc định
 
     // Tạo đối tượng bài viết mới
     const post = new Post({
@@ -49,6 +48,48 @@ const addPost = async (req, res) => {
   }
 };
 
+const updatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { title, content, author, tags, thumbnail, description, gallery } = req.body;
+
+    if (!title || !content || !author) {
+      return res
+        .status(400)
+        .json({ message: "Title, content, and author are required." });
+    }
+
+    const post = await Post.findById(id);
+    if (!post) {
+      return res.status(404).json({ message: "Bài viết không tồn tại." });
+    }
+
+    const slug = title !== post.title ? CreateSlugByTitle(title) : post.slug;
+
+    post.title = title;
+    post.content = content;
+    post.author = author;
+    post.tags = tags || post.tags;
+    post.thumbnail = thumbnail || post.thumbnail || ''; 
+    post.description = description || post.description || ''; 
+    post.gallery = gallery || post.gallery || []; 
+    post.slug = slug;
+    post.updatedAt = new Date(); 
+
+    const data = await post.save();
+
+    return res.status(200).json({
+      message: "Cập nhật bài viết thành công", 
+      data,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message || "Có lỗi xảy ra khi cập nhật bài viết." });
+  }
+};
+
 const getAllPosts = async (req, res) => {
   try {
     // Lấy tất cả bài viết từ cơ sở dữ liệu
@@ -64,7 +105,7 @@ const getAllPosts = async (req, res) => {
     // Trả về danh sách bài viết
     return res.status(200).json({
       message: "Lấy danh sách bài viết thành công.",
-      data: posts,
+      data: posts,   
     });
   } catch (error) {
     // Trả về lỗi nếu có
@@ -80,6 +121,34 @@ const getPostBySlug = async (req, res) => {
 
     // Tìm bài viết theo slug trong cơ sở dữ liệu
     const post = await Post.findOne({ slug: req.params.slug });
+
+    // Kiểm tra nếu không tìm thấy bài viết
+    if (!post) {
+      return res.status(404).json({
+        message: "Bài viết không tồn tại.",
+      });
+    }
+
+    // Trả về chi tiết bài viết
+    return res.status(200).json({
+      message: "Lấy chi tiết bài viết thành công.",
+      data: post,
+    });
+  } catch (error) {
+    // Trả về lỗi nếu có
+    return res.status(500).json({
+      message: error.message || "Có lỗi xảy ra khi lấy chi tiết bài viết.",
+    });
+  }
+};
+
+const getPostById = async (req, res) => {
+  try {
+    // Lấy slug từ tham số URL
+    const { id } = req.params;
+
+    // Tìm bài viết theo slug trong cơ sở dữ liệu
+    const post = await Post.findById(id);
 
     // Kiểm tra nếu không tìm thấy bài viết
     if (!post) {
@@ -184,10 +253,12 @@ const uploadGalleryBlog = async (req, res) => {
 
 module.exports = {
   addPost,
+  updatePost,
   getAllPosts,
   getPostBySlug,
   getRelatedPostsByTag,
   deletePost,
   uploadBlog,
   uploadGalleryBlog,
+  getPostById,
 };
