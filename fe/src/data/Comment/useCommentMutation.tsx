@@ -1,7 +1,7 @@
 import instance from '@/api/axiosIntance';
 import { toast } from '@medusajs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { QUERY_KEY } from '../stores/key';
+import { QUERY_KEY } from '@/data/stores/key';
 
 const useCommentMutation = () => {
   const queryClient = useQueryClient();
@@ -83,7 +83,7 @@ const useCommentMutation = () => {
       return response;
     },
     onError: (error: any) => {
-      toast.error(`Error deleting comment: ${error.message}`, {
+      toast.error(`Không thể xoá bình luận của người khác!`, {
         description: 'Please try again later.',
       });
     },
