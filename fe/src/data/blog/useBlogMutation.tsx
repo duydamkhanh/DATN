@@ -3,6 +3,10 @@ import { QUERY_KEY } from '@/data/stores/key.ts'; // Đảm bảo bạn có quer
 import { toast } from '@medusajs/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+type EditProductData = {
+  data: FormData;
+  id: string;
+};
 const useBlogMutation = () => {
   const queryClient = useQueryClient();
 
@@ -39,6 +43,22 @@ const useBlogMutation = () => {
     },
   });
 
+  const updatePost = useMutation({
+    mutationFn: ({ data, id }: EditProductData) =>
+      instance.put(`blogs/${id}`, data),
+
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['blog'],
+      });
+    },
+    onError: error => {
+      const message = error.response?.data?.message || 'Lỗi không xác định';
+      toast.error(`Lỗi khi sửa bài viết: ${message}`);
+      console.error('Chi tiết lỗi:', error);
+    },
+  });
+
   // Xóa bài viết
   const deletePost = useMutation({
     mutationFn: async (_id: string) => {
@@ -65,7 +85,7 @@ const useBlogMutation = () => {
     },
   });
 
-  return { createPost, deletePost };
+  return { createPost, deletePost, updatePost };
 };
 
 export default useBlogMutation;
