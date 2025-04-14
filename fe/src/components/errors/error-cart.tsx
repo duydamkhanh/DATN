@@ -1,10 +1,13 @@
 
 import { useNavigate } from '@tanstack/react-router';
-// import imgCart from '../../assets/images/cart_trong.jpg';
+import imgCart from '../../assets/images/cart_trong.jpg';
 const ErrorCart = () => {
     const navigate = useNavigate();
     return (
         <div className="m-auto max-w-6xl p-10 text-center">
+            <div className='flex justify-center'>
+                <img src={imgCart} alt="Giỏ hàng trống" />
+            </div>
             <h2 className="mb-5 text-xl font-bold">Giỏ hàng của bạn trống!</h2>
             <div className='flex gap-5 justify-center items-center'>
                 <button
