@@ -7,7 +7,6 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 
 // Import routes
-const message = require("./routers/chatRoutes");
 const cartRouter = require("./routers/cart");
 const productRouter = require("./routers/product");
 const categoryRouter = require("./routers/category");
@@ -19,7 +18,6 @@ const commentRouter = require("./routers/comment");
 const paymentRoutes = require("./routers/paymentRoutes");
 const blogRoutes = require("./routers/blog");
 const customerRoutes = require("./routers/customerRoutes");
-// const locationRoutes = require("./routers/address");
 
 // Database connection
 const { connectDB } = require("./config/db");
@@ -74,10 +72,8 @@ app.use("/api", shippingRoutes);
 app.use("/api", couponRoutes);
 app.use("/api", commentRouter);
 app.use("/api", paymentRoutes);
-app.use("/api", message);
 app.use("/api", blogRoutes);
 app.use("/api", customerRoutes);
-// app.use("/api", locationRoutes);
 
 // Start servers
 const PORT = process.env.PORT || 8081;
