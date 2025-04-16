@@ -1,5 +1,4 @@
 import instance from '@/api/axiosIntance';
-import ChatBot from '@/components/ChatBot';
 import CurrencyVND from '@/components/config/vnd';
 import FeaturedProducts from '@/components/featuredProducts';
 import RatingStars from '@/components/ui/rating-stars';
@@ -8,15 +7,9 @@ import useCommentMutation from '@/data/Comment/useCommentMutation';
 import useSoldQuantity from '@/data/oder/useOrderSoldQuantity';
 import { useFetchCategory } from '@/data/products/useProductList';
 import { useSocket } from '@/data/socket/useSocket';
-import {
-  EllipsisHorizontal,
-  EyeMini,
-  ShoppingCart,
-  StarSolid,
-  Trash,
-} from '@medusajs/icons';
+import { EllipsisHorizontal, ShoppingCart, Trash } from '@medusajs/icons';
 import { DropdownMenu, IconButton, toast } from '@medusajs/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useParams } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
@@ -25,7 +18,6 @@ export const Route = createFileRoute('/_layout/$slug/quickviewProduct')({
 });
 
 function DetailProduct() {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const { data: categories } = useFetchCategory();
   const [currentImage, setCurrentImage] = useState('');
   const [product, setProduct] = useState(null);
@@ -36,9 +28,7 @@ function DetailProduct() {
   const [availableColors, setAvailableColors] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
   const { createComment, removeComment } = useCommentMutation();
-  const [rating, setRating] = useState(0); // State for product rating
   const [averageRating, setAverageRating] = useState(0);
 
   const { slug } = useParams({ from: '/_layout/$slug/quickviewProduct' });
