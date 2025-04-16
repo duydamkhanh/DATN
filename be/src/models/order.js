@@ -74,6 +74,7 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
     returnReason: String,
+    cancelReason: String,
     complaintDetails: String, // Thêm thông tin khiếu nại nếu cần
     paymentCode: String,
     paymentMethod: {
