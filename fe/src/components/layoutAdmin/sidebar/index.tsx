@@ -51,14 +51,14 @@ const menuCoupon: MenuItem[] = [
     href: '/dashboard/coupon',
   },
 ];
-// const menuBlog: MenuItem[] = [
-//   {
-//     id: 1,
-//     name: 'Danh sách bài viết',
-//     icon: <Pencil />,
-//     href: '/dashboard/blog',
-//   },
-// ];
+const menuBlog: MenuItem[] = [
+  {
+    id: 1,
+    name: 'Danh sách bài viết',
+    icon: <Pencil />,
+    href: '/dashboard/blog',
+  },
+];
 const menuUser: MenuItem[] = [
   {
     id: 1,
@@ -166,7 +166,7 @@ const Sidebar = () => {
             ))}
           </div>
         </section>
-        {/* <section className="space-y-1">
+        <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
             Bài viết
           </header>
@@ -181,7 +181,7 @@ const Sidebar = () => {
               />
             ))}
           </div>
-        </section> */}
+        </section>
 
         <section className="space-y-1">
           <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
