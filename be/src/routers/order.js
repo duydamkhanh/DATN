@@ -1,4 +1,6 @@
 const express = require("express");
+const { upload } = require("../config/multer");
+
 const {
   getOrderById,
   getOrders,
@@ -15,6 +17,7 @@ const {
   getOrderByIdAdmin,
   getOrdersByUserIdWithOnlinePayment,
   getSoldQuantityByProductId,
+  uploadComplaint,
 } = require("../controllers/order");
 const router = express.Router();
 
@@ -37,5 +40,11 @@ router.post("/:id/return", updateReturnReason);
 router.get("/count-successful-orders", countSuccessfulOrders);
 router.get('/order/:userId', getOrdersByUserIdWithOnlinePayment);
 router.get('/order/sold/:productId', getSoldQuantityByProductId);
+
+router.post(
+  `/upload-gallery-complaint`,
+  upload.array("complaint", 10),
+  uploadComplaint
+);
 
 module.exports = router;

@@ -88,6 +88,15 @@ function UserOrder() {
   const [ProductSlug, setProductSlug] = useState(null);
   const [ProductId, setProductId] = useState(null);
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+
+  const openCancelDialog = (orderId: string) => {
+    setCurrentOrderId(orderId);
+    setIsDialogOpen(true);
+  };
+
   const fetchReviewedProducts = async () => {
     try {
       if (!orders || orders.length === 0) {
@@ -160,36 +169,33 @@ function UserOrder() {
     setRating(newRating); // Update the rating value
   };
 
-  const deleteEntity = async (orderId: string) => {
-    // Hiển thị hộp thoại xác nhận
-    const userHasConfirmed = await dialog({
-      title: 'Xác nhận hủy đơn hàng',
-      description: 'Bạn có chắc chắn muốn hủy đơn hàng này không?',
-    });
+  const confirmCancel = async () => {
+    if (!cancelReason) {
+      toast.error('Vui lòng nhập lý do hủy đơn hàng.');
+      return;
+    }
 
-    // Nếu người dùng xác nhận, tiến hành hủy đơn hàng
-    if (userHasConfirmed) {
-      try {
-        // Gọi API để hủy đơn hàng
-        const response = await instance.put(`/orders/${orderId}/cancel`);
-        console.log('Hủy đơn hàng thành công:', response.data);
-        toast.success('Đơn hàng đã được hủy thành công.');
-
-        // Cập nhật danh sách đơn hàng sau khi hủy
-        const updatedOrders = orders.map((order: Order) =>
-          order._id === orderId
-            ? {
-                ...order,
-                status: 'refund_initiated',
-                paymentStatus: 'pendingRefund',
-              }
-            : order
-        );
-        setOrders(updatedOrders);
-      } catch (error) {
-        console.error('Error cancelling order:', error);
-        toast.error('Có lỗi xảy ra khi hủy đơn hàng, vui lòng thử lại.');
-      }
+    try {
+      const response = await instance.put(`/orders/${currentOrderId}/cancel`, {
+        reason: cancelReason,
+      });
+      toast.success('Đơn hàng đã được hủy thành công.');
+      const updatedOrders = orders.map((order: Order) =>
+        order._id === currentOrderId
+          ? {
+              ...order,
+              status: 'refund_initiated',
+              paymentStatus: 'pendingRefund',
+            }
+          : order
+      );
+      setOrders(updatedOrders);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra khi hủy đơn hàng.');
+    } finally {
+      setIsDialogOpen(false);
+      setCancelReason('');
+      setCurrentOrderId(null);
     }
   };
 
@@ -666,29 +672,37 @@ function UserOrder() {
                         )}
                         {order.status === 'pending' && (
                           <button
-                            onClick={() => deleteEntity(order._id)}
+                            onClick={() => openCancelDialog(order._id)}
                             className="mr-2 rounded-md border-[1px] border-[#ee4d2d] px-4 py-2 text-[#ee4d2d] hover:border-red-600"
                           >
                             Hủy đơn hàng
                           </button>
                         )}
+
                         {order.status === 'received' && (
-                          <>
-                            <button
-                              onClick={() => handleConfirmReceived(order._id)}
-                              className="mr-2 rounded-md border-[1px] border-green-500 px-4 py-2 text-green-500 hover:border-green-600"
-                            >
-                              Đã nhận được hàng
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleOpenComplaintModal(order._id)
-                              }
-                              className="rounded-md border-[1px] border-purple-500 px-4 py-2 text-purple-500 hover:border-purple-600"
-                            >
-                              Khiếu nại
-                            </button>
-                          </>
+                          <div className="flex-col">
+                            <div>
+                              <button
+                                onClick={() => handleConfirmReceived(order._id)}
+                                className="mr-2 rounded-md border-[1px] border-green-500 px-4 py-2 text-green-500 hover:border-green-600"
+                              >
+                                Đã nhận được hàng
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleOpenComplaintModal(order._id)
+                                }
+                                className="rounded-md border-[1px] border-purple-500 px-4 py-2 text-purple-500 hover:border-purple-600"
+                              >
+                                Khiếu nại
+                              </button>
+                            </div>
+                            <p className="mt-2 w-96 text-[12px] text-gray-400">
+                              Vui lòng chỉ nhấn "Đã nhận được hàng" khi đơn hàng
+                              đã được giao đến bạn và sản phẩm nhận được không
+                              có vấn đề nào.
+                            </p>
+                          </div>
                         )}
                       </div>
 
@@ -821,6 +835,38 @@ function UserOrder() {
                 className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
               >
                 Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDialogOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50">
+          <div className="w-full max-w-md rounded bg-white p-6 shadow-md">
+            <h2 className="mb-2 text-lg font-semibold">
+              Xác nhận hủy đơn hàng
+            </h2>
+            <p className="mb-4">Vui lòng nhập lý do hủy đơn hàng:</p>
+            <input
+              type="text"
+              value={cancelReason}
+              onChange={e => setCancelReason(e.target.value)}
+              className="mb-4 w-full rounded border px-3 py-2"
+              placeholder="Nhập lý do..."
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsDialogOpen(false)}
+                className="rounded bg-gray-300 px-4 py-2"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmCancel}
+                className="rounded bg-red-500 px-4 py-2 text-white"
+              >
+                Xác nhận
               </button>
             </div>
           </div>

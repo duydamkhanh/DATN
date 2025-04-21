@@ -1,5 +1,6 @@
 import CurrencyVND from '@/components/config/vnd';
 import Header from '@/components/layoutAdmin/header/header';
+import ListEmpty from '@/components/ui/list-empty';
 import { useFetchOrdersStatus } from '@/data/oder/useOderList';
 import useCheckoutMutation from '@/data/oder/useOderMutation';
 import { EllipsisVertical } from '@medusajs/icons';
@@ -179,6 +180,7 @@ function OrderList() {
         order.paymentMethod === 'online'
       );
     }
+
     if (selectedTab === 'all-delivery') {
       if (selectedGroup === 'delivery') {
         return [
@@ -313,7 +315,7 @@ function OrderList() {
               Trạng thái
             </Table.HeaderCell>
             <Table.HeaderCell className="font-semibold text-ui-fg-base">
-              Lí do trả hàng
+              Lí do trả/huỷ hàng
             </Table.HeaderCell>
           </Table.Row>
           <Table.Body>
@@ -445,13 +447,46 @@ function OrderList() {
                     <DropdownMenu>
                       <DropdownMenu.Trigger asChild>
                         <span className="cursor-pointer">
-                          {order.returnReason || 'N/A'}
+                          {order.cancelReason || order.returnReason || 'N/A'}
                         </span>
                       </DropdownMenu.Trigger>
                       <DropdownMenu.Content className="w-96 p-4">
                         <div>
-                          <p className="font-semibold">Lý do chi tiết:</p>
-                          <p>{order.returnReason || 'N/A'} </p>
+                          {order.cancelReason ? (
+                            <p>
+                              <strong>Lý do hủy:</strong> {order.cancelReason}
+                            </p>
+                          ) : (
+                            <div className="mb-6">
+                              <h3 className="mb-2 text-lg font-semibold">
+                                Thông tin trả hàng
+                              </h3>
+                              <p>
+                                <strong>Lý do trả hàng:</strong>{' '}
+                                {order.returnReason || 'N/A'}
+                              </p>
+                              <div className="mt-2">
+                                <strong>Ảnh minh họa:</strong>
+                                {order.complaintImages &&
+                                order.complaintImages.length > 0 ? (
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {order.complaintImages.map(
+                                      (imageUrl: string) => (
+                                        <img
+                                          src={imageUrl}
+                                          className="h-16 w-16 rounded border object-cover"
+                                        />
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-gray-600">
+                                    Không có ảnh minh họa.
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </DropdownMenu.Content>
                     </DropdownMenu>
@@ -459,11 +494,7 @@ function OrderList() {
                 </Table.Row>
               ))
             ) : (
-              <Table.Row>
-                <Table.Cell className="text-center">
-                  Không có đơn hàng nào
-                </Table.Cell>
-              </Table.Row>
+              <ListEmpty />
             )}
           </Table.Body>
         </Table>
