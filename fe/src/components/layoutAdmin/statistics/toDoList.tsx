@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useFetchOrders } from '@/data/oder/useOderList';
 import { Link } from '@tanstack/react-router';
 
@@ -20,7 +21,21 @@ const translateOrderStatus = status => {
 };
 
 const ToDoList = () => {
-  const { data, isLoading, error } = useFetchOrders({});
+  const [timeRange, setTimeRange] = useState('month'); // default là theo tháng
+
+  const {
+    data,
+    isLoading,
+    error,
+    statusCounts: fetchedStatusCounts,
+  } = useFetchOrders({
+    status: 'pending,shipped',
+    timeRange,
+  });
+
+  const handleTimeRangeChange = e => {
+    setTimeRange(e.target.value);
+  };
 
   if (isLoading) return <p>Đang tải...</p>;
   if (error) return <p>Lỗi khi tải đơn hàng: {error.message}</p>;
@@ -39,7 +54,8 @@ const ToDoList = () => {
     exchange_completed: 0,
   };
 
-  // Phân loại trạng thái thành 2 nhóm
+  const statusCounts = { ...defaultStatusCounts, ...fetchedStatusCounts };
+
   const deliveryStatuses = [
     'pendingPayment',
     'pending',
@@ -56,21 +72,32 @@ const ToDoList = () => {
     'exchange_completed',
   ];
 
-  const statusCounts = { ...defaultStatusCounts, ...data?.statusCounts };
+  const deliveryCounts = Object.fromEntries(
+    Object.entries(statusCounts).filter(([key]) =>
+      deliveryStatuses.includes(key)
+    )
+  );
 
-  const deliveryCounts = Object.keys(statusCounts)
-    .filter(status => deliveryStatuses.includes(status))
-    .reduce((obj, key) => ({ ...obj, [key]: statusCounts[key] }), {});
-
-  const complaintCounts = Object.keys(statusCounts)
-    .filter(status => complaintStatuses.includes(status))
-    .reduce((obj, key) => ({ ...obj, [key]: statusCounts[key] }), {});
+  const complaintCounts = Object.fromEntries(
+    Object.entries(statusCounts).filter(([key]) =>
+      complaintStatuses.includes(key)
+    )
+  );
 
   return (
     <div className="m-6 rounded-lg bg-white p-6">
-      <h2 className="mb-8 text-center text-xl font-semibold">
-        Danh sách cần làm
-      </h2>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Danh sách cần làm</h2>
+        <select
+          value={timeRange}
+          onChange={handleTimeRangeChange}
+          className="rounded border px-2 py-1"
+        >
+          <option value="week">Tuần này</option>
+          <option value="month">Tháng này</option>
+          <option value="year">Năm nay</option>
+        </select>
+      </div>
 
       {/* Nhóm Delivery */}
       <h3 className="mb-2 mt-4 text-lg font-medium">Đơn giao hàng</h3>
