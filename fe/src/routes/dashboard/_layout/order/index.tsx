@@ -494,7 +494,7 @@ function OrderList() {
                 </Table.Row>
               ))
             ) : (
-              <ListEmpty />
+              <>Không có đơn hàng!</>
             )}
           </Table.Body>
         </Table>
