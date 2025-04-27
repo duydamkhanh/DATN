@@ -215,17 +215,6 @@ function OrderList() {
   return (
     <div className="h-screen overflow-y-auto">
       <Header title="Danh sách đơn hàng" pathname="/" />
-      <div className="relative flex justify-between px-6 pt-4">
-        <div className="relative w-80">
-          <Input
-            className="bg-ui-bg-base"
-            placeholder="Tìm kiếm"
-            id="search-input"
-            size="small"
-          />
-        </div>
-        <div className="flex items-center gap-2"></div>
-      </div>
       {Loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="flex items-center justify-center space-x-2 rounded-lg bg-white p-6 py-4 shadow-lg">

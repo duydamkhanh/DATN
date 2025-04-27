@@ -160,22 +160,8 @@ function UserList() {
   return (
     <div className="h-screen overflow-y-auto bg-gray-50">
       <Header title="Danh sách người dùng" />
-      <div className="relative flex justify-between px-6 py-4">
-        <Input
-          className="w-80 bg-ui-bg-base"
-          placeholder="Tìm kiếm người dùng"
-          id="search-input"
-          size="small"
-        />
-        <div className="flex items-center gap-2">
-          <Button variant="secondary">
-            <Adjustments className="text-black" />
-            Lọc
-          </Button>
-        </div>
-      </div>
 
-      <div className="mx-6 flex flex-col gap-6 rounded-lg border border-gray-200 bg-ui-bg-base px-6 py-4">
+      <div className="mx-6 mt-10 flex flex-col gap-6 rounded-lg border border-gray-200 bg-ui-bg-base px-6 py-4">
         {isLoading && (
           <p className="py-6 text-center text-gray-500">
             Đang tải người dùng...

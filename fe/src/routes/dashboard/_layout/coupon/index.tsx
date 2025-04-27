@@ -84,18 +84,10 @@ function CouponList() {
   return (
     <div className="h-screen overflow-y-auto">
       <Header title="Danh sách phiếu giảm giá" />
-      <div className="relative flex justify-between px-6 py-4">
-        <div className="relative w-80">
-          <Input
-            className="bg-ui-bg-base"
-            placeholder="Tìm kiếm"
-            id="search-input"
-            size="small"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2">
+      {/* <div className="relative flex px-6 py-4">
+       
+      </div> */}
+       <div className="flex justify-end items-center gap-2 py-4 px-4">
           <Button
             variant="primary"
             onClick={() => navigate({ to: '/dashboard/coupon/create' })}
@@ -104,7 +96,6 @@ function CouponList() {
             Tạo phiếu giảm giá
           </Button>
         </div>
-      </div>
 
       <div className="mx-6 flex flex-col gap-1 rounded-lg border border-gray-200 bg-ui-bg-base px-6 py-4">
         <Table>
