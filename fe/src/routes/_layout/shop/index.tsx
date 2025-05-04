@@ -1,17 +1,17 @@
 import instance from '@/api/axiosIntance';
 import CurrencyVND from '@/components/config/vnd';
 import FilterBar from '@/components/FilterBar';
+import RatingStars from '@/components/ui/rating-stars';
 import useCartMutation from '@/data/cart/useCartMutation';
+import useProductComments from '@/data/Comment/useCommentList';
 import {
-  useFetchCategory,
+  useFetchCategoryShow,
   useFetchProductAll,
 } from '@/data/products/useProductList';
 import { ChevronLeft, ChevronRight } from '@medusajs/icons';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import anhbanershop from '../../../assets/images/shop/shop_banner_character1.png';
-import useProductComments from '@/data/Comment/useCommentList';
-import RatingStars from '@/components/ui/rating-stars';
 export const Route = createFileRoute('/_layout/shop/')({
   component: Shop,
 });
@@ -65,7 +65,7 @@ function Shop() {
     }
   }, [soldProductIds]);
 
-  const { data: categories } = useFetchCategory(); // Lấy danh mục từ API
+  const { data: categories } = useFetchCategoryShow(); // Lấy danh mục từ API
 
   const handleAddToCart = (product: Product) => {
     const userId = localStorage.getItem('userId') ?? ''; // Xử lý userId có thể là null

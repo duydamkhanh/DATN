@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import instance from '@/api/axiosIntance';
 import { useNavigate } from '@tanstack/react-router';
 import { toast } from '@medusajs/ui';
-import { useSocket } from '../socket/useSocket';
+import { useSocket } from '@/data/socket/useSocket';
 import { useEffect } from 'react';
 
 const useCheckoutMutation = () => {
@@ -40,7 +40,7 @@ const useCheckoutMutation = () => {
     },
 
     onError: error => {
-      toast.error(`Checkout failed: ${error.message}`);
+      toast.warning(`Thanh toán không thành công, số lượng còn lại ko đủ!`);
     },
   });
 
@@ -59,15 +59,35 @@ const useCheckoutMutation = () => {
   }, [socket, queryClient]);
 
   const updateOrderStatus = useMutation({
-    mutationFn: ({ orderId, status }) =>
-      instance.put(`/orders/${orderId}`, { status }),
+    mutationFn: async ({ orderId, status }) => {
+      try {
+        // Lấy thông tin đơn hàng từ API
+        const orderResponse = await instance.get(`/orders/${orderId}`);
+
+        // Lấy thông tin người dùng từ localStorage (giả sử thông tin người dùng được lưu trong localStorage dưới dạng JSON)
+        const storedData = JSON.parse(localStorage.getItem('user') || '{}'); // Default là object rỗng nếu không có gì trong localStorage
+
+        // Kiểm tra vai trò của người dùng
+        if (storedData.role === 'admin' && status === 'delivered') {
+          toast.warning(
+            'Khách hàng chưa xác nhận đã nhận hàng. Admin không thể cập nhật trạng thái thành "delivered".'
+          );
+          return; // Dừng việc gửi yêu cầu cập nhật trạng thái nếu là admin và trạng thái là "delivered"
+        }
+
+        // Nếu không phải admin hoặc trạng thái không phải là "delivered", gửi yêu cầu cập nhật trạng thái
+        const response = await instance.put(`/orders/${orderId}`, { status });
+        return response;
+      } catch (error) {
+        console.error('Error updating order status:', error);
+
+        // Nếu lỗi xảy ra trong quá trình gọi API, ném lại lỗi để `onError` có thể xử lý
+        throw new Error(error.message || 'Unknown error');
+      }
+    },
 
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['orders'] });
-    },
-
-    onError: error => {
-      toast.error(`Failed to update status: ${error.message}`);
     },
   });
 
