@@ -212,7 +212,7 @@ const Header = () => {
             {/* /.navigation */}
             <div className="header-tools d-flex align-items-center">
               <div className="header-tools__item hover-container">
-                {showSearch ? (
+                {/* {showSearch ? (
                   <div className="flex items-center rounded-md border !border-gray-400 px-2">
                     <input
                       type="text"
@@ -235,7 +235,7 @@ const Header = () => {
                       setTimeout(() => inputRef.current?.focus(), 1);
                     }}
                   ></i>
-                )}
+                )} */}
 
                 <div className="search-popup js-hidden-content">
                   <form
