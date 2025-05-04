@@ -4,7 +4,7 @@ import { toast } from '@medusajs/ui';
 import CurrencyVND from './config/vnd';
 
 // Các kiểu dữ liệu cho các lựa chọn lọc
-type ColorType = 'Black' | 'Blue' | 'Gray' | 'Green' | 'Red' | 'White';
+type ColorType = 'Black' | 'Blue' | 'Gray' | 'Green' | 'Red' | 'White'|'Pink'|'Orange';
 type SizeType = 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'All';
 
 const colorMapping: Record<ColorType, string> = {
@@ -13,6 +13,8 @@ const colorMapping: Record<ColorType, string> = {
   Gray: '#808080',
   Green: '#008000',
   Red: '#FF0000',
+  Pink:'#FFB6C1',
+  Orange:'#FFA500',
   White: '#FFFFFF',
 };
 

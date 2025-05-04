@@ -79,8 +79,8 @@ const createOrder = async (req, res) => {
       if (!user || !user.email) {
         throw new Error('User not found or email is missing.');
       }
-      // const email = user.email;
-      // Mail.sendOrderConfirmation(email, order);
+      const email = user.email;
+      Mail.sendOrderConfirmation(email, order);
 
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode });
