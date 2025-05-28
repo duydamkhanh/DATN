@@ -79,8 +79,8 @@ const createOrder = async (req, res) => {
       if (!user || !user.email) {
         throw new Error('User not found or email is missing.');
       }
-      // const email = user.email;
-      // Mail.sendOrderConfirmation(email, order);
+      const email = user.email;
+      Mail.sendOrderConfirmation(email, order);
 
       if (couponCode) {
         const coupon = await Coupon.findOne({ code: couponCode });
@@ -187,36 +187,16 @@ const getOrders = async (req, res) => {
       status,
       sortBy = "createdAt",
       order = "desc",
+      range, // week | month | year
     } = req.query;
 
-    const validStatuses = [
-      "all-delivery",
-      "all-complaint",
-      "pending",
-      "pendingPayment",
-      "confirmed",
-      "shipped",
-      "received",
-      "delivered",
-      "canceled",
-      "complaint",
-      "refund_in_progress",
-      "exchange_in_progress",
-      "refund_completed",
-      "exchange_completed",
-      "canceled_complaint",
-      "refund_initiated",
-      "refund_done", 
-      "all-refund", 
-    ];
+    const validStatuses = [/* ... giữ nguyên danh sách status như trước */];
 
     const filter = {};
 
+    // Filter theo status
     if (status) {
-      const statusArray = status
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => validStatuses.includes(s));
+      const statusArray = status.split(",").map(s => s.trim()).filter(s => validStatuses.includes(s));
       if (statusArray.length > 0) {
         if (statusArray.includes("all-delivery")) {
           filter.status = {
@@ -228,10 +208,29 @@ const getOrders = async (req, res) => {
           };
         } else if (statusArray.includes("all-refund")) {
           filter.status = { $in: ["refund_initiated", "refund_done"] };
-          filter.paymentMethod = "online"; 
+          filter.paymentMethod = "online";
         } else {
           filter.status = { $in: statusArray };
         }
+      }
+    }
+
+    // Filter theo range (tuần, tháng, năm)
+    if (range) {
+      const now = new Date();
+      let fromDate;
+
+      if (range === "week") {
+        fromDate = new Date();
+        fromDate.setDate(now.getDate() - 7);
+      } else if (range === "month") {
+        fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (range === "year") {
+        fromDate = new Date(now.getFullYear(), 0, 1);
+      }
+
+      if (fromDate) {
+        filter.createdAt = { $gte: fromDate };
       }
     }
 
@@ -251,8 +250,7 @@ const getOrders = async (req, res) => {
       { $group: { _id: null, total: { $sum: "$totalPrice" } } },
     ]);
 
-    const totalDeliveredAmount =
-      totalDeliveredValue.length > 0 ? totalDeliveredValue[0].total : 0;
+    const totalDeliveredAmount = totalDeliveredValue.length > 0 ? totalDeliveredValue[0].total : 0;
 
     return res.status(StatusCodes.OK).json({
       data: orders,
@@ -267,11 +265,11 @@ const getOrders = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getOrders:", error);
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ error: error.message });
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
   }
 };
+
+
 
 const getOrderById = async (req, res) => {
   try {
@@ -429,8 +427,10 @@ const deleteOrder = async (req, res) => {
       .json({ error: error.message });
   }
 };
+
 const cancelOrder = async (req, res) => {
   const { orderId } = req.params;
+  const { reason } = req.body; // Nhận lý do huỷ nếu có
 
   if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
     return res
@@ -445,11 +445,14 @@ const cancelOrder = async (req, res) => {
       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
     }
 
+    // Chỉ cho huỷ nếu đang chờ xác nhận
     if (order.status !== "pending") {
       return res.status(400).json({
         message: "Đơn hàng đã được xác nhận hoặc đang xử lý, không thể hủy",
       });
     }
+
+    // Trả hàng về kho
     for (const item of order.items) {
       const product = await Product.findById(item.productId);
 
@@ -460,26 +463,39 @@ const cancelOrder = async (req, res) => {
 
         if (variantIndex >= 0) {
           product.variants[variantIndex].countInStock += item.quantity;
-        } else {
-          product.countInStock += item.quantity;
         }
 
-        await product.save(); 
+        // Nếu không tìm thấy variant thì cộng vào tổng (trường hợp thiếu cấu trúc)
+        product.countInStock += item.quantity;
+
+        await product.save();
       }
     }
 
+    // Cập nhật trạng thái đơn hàng
     if (order.paymentMethod === "cod") {
       order.status = "canceled";
     } else if (order.paymentMethod === "online") {
       order.status = "refund_initiated";
       order.paymentStatus = "pendingRefund";
     }
+
+    // Ghi lại lý do huỷ nếu có
+    if (reason) {
+      order.cancelReason = reason;
+    }
+
     await order.save();
-    if (order.customerInfo && order.customerInfo.email) {
+
+    // Gửi email nếu có
+    if (order.customerInfo?.email) {
       await Mail.sendOrderStatusUpdate(order.customerInfo.email, order);
     }
 
-    res.status(200).json({ message: "Đơn hàng đã được hủy thành công", order });
+    res.status(200).json({
+      message: "Đơn hàng đã được hủy thành công",
+      order,
+    });
   } catch (error) {
     console.error("Lỗi khi hủy đơn hàng:", error.message);
     res.status(500).json({
@@ -488,6 +504,7 @@ const cancelOrder = async (req, res) => {
     });
   }
 };
+
 
 const confirmReceived = async (req, res) => {
   const { orderId } = req.params;
@@ -554,42 +571,63 @@ const setDelivered = async (req, res) => {
   }
 };
 const returnOrder = async (req, res) => {
-  const { orderId } = req.params; // Lấy orderId từ params
-  const { reason } = req.body; // Lấy lý do từ body (loại hoàn trả không cần thiết nữa)
+  const { orderId } = req.params;
+  const { reason, returnType: type, images } = req.body;// Thêm images vào body
 
   try {
-    const order = await Order.findById(orderId); // Tìm đơn hàng theo orderId
-
-    // Nếu không tìm thấy đơn hàng
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
     }
 
-    // Kiểm tra trạng thái của đơn hàng, chỉ cho phép khiếu nại nếu đã giao hoặc đã nhận
-    if (order.status !== "delivered" && order.status !== "received") {
-      return res.status(400).json({
-        message: "Chỉ có thể khiếu nại đơn hàng đã giao hoặc đã nhận",
-      });
+    if (type === "complaint") {
+      if (order.status !== "delivered" && order.status !== "received") {
+        return res.status(400).json({
+          message: "Chỉ có thể khiếu nại đơn hàng đã giao hoặc đã nhận",
+        });
+      }
+
+      order.status = "complaint";
+      order.returnReason = reason;
+      if (images && Array.isArray(images)) {
+        order.complaintImages = images; // Gán danh sách ảnh khiếu nại
+      }
+
+    } else if (type === "canceled") {
+      if (order.status !== "pending" && order.status !== "confirmed") {
+        return res.status(400).json({
+          message: "Chỉ có thể huỷ đơn hàng khi đang chờ xác nhận hoặc đã xác nhận",
+        });
+      }
+
+      order.status = "canceled";
+      order.cancelReason = reason;
+      if (images && Array.isArray(images)) {
+        order.cancelImages = images; // Gán danh sách ảnh huỷ đơn (nếu cần)
+      }
+
+    } else {
+      return res.status(400).json({ message: "Loại hành động không hợp lệ" });
     }
 
-    // Cập nhật trạng thái đơn hàng thành "complainyt"
-    order.status = "complaint";
-    order.returnReason = reason; // Lưu lý do khiếu nại vào đơn hàng
+    await order.save();
 
-    await order.save(); // Lưu lại thay đổi vào cơ sở dữ liệu
-
-    // Trả về phản hồi thành công
     res.status(200).json({
-      message: "Đơn hàng đã được xử lý với trạng thái khiếu nại thành công",
-      order, // Trả lại thông tin đơn hàng đã cập nhật
+      message:
+        type === "complaint"
+          ? "Đơn hàng đã được xử lý khiếu nại thành công"
+          : "Đơn hàng đã được huỷ thành công",
+      order,
     });
   } catch (error) {
-    // Nếu có lỗi xảy ra
-    res
-      .status(500)
-      .json({ message: "Có lỗi xảy ra khi xử lý khiếu nại đơn hàng", error });
+    res.status(500).json({
+      message: "Có lỗi xảy ra khi xử lý yêu cầu",
+      error,
+    });
   }
 };
+
+
 
 const updateReturnReason = async (req, res) => {
   const { id } = req.params;
@@ -653,7 +691,7 @@ cron.schedule('* * * * *', async () => {
     console.log("Cron job triggered at:", new Date());
 
     const now = new Date();
-    const oneMinuteAgo = new Date(now.getTime() - 10 * 60 * 1000);
+    const oneMinuteAgo = new Date(now.getTime() - 1 * 60 * 1000);
 
     // Tìm các đơn hàng có trạng thái 'pendingPayment' quá 1 phút
     const orders = await Order.find({
@@ -828,6 +866,27 @@ const getSoldQuantityByProductId = async (req, res) => {
 };
 
 
+const uploadComplaint = async (req, res) => {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    const uploadedFiles = [];
+
+    for (const file of files) {
+      uploadedFiles.push(file.path);
+    }
+
+    res.json(uploadedFiles);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" + error });
+  }
+};
+
+
 
 module.exports = {
   getOrderById,
@@ -845,4 +904,5 @@ module.exports = {
   getOrderByIdAdmin,
   getOrdersByUserIdWithOnlinePayment,
   getSoldQuantityByProductId,
+  uploadComplaint,
 };

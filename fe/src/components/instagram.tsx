@@ -15,7 +15,7 @@ const Instagram = () => {
     return (
         <div>
             <section className="instagram container">
-                <h2 className="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">@FashionZone</h2>
+                <h2 className="section-title text-uppercase text-center mb-4 pb-xl-2 mb-xl-4">BAYA</h2>
                 <div className="row row-cols-3 row-cols-md-4 row-cols-xl-6 px-[40px]">
                     <div className="instagram__tile">
                         <a href="https://instagram.com/" target="_blank" className="position-relative overflow-hidden d-block effect overlay-plus">

@@ -63,7 +63,7 @@ const OrderSchema = new mongoose.Schema(
         "exchange_completed",
         "canceled_complaint",
         "refund_initiated",
-        "refund_done",
+        "refund_done"
       ],
       default: "pending",
     },
@@ -74,6 +74,7 @@ const OrderSchema = new mongoose.Schema(
       },
     ],
     returnReason: String,
+    complaintImages: [{ type: String }],
     cancelReason: String,
     complaintDetails: String, // Thêm thông tin khiếu nại nếu cần
     paymentCode: String,
@@ -83,15 +84,7 @@ const OrderSchema = new mongoose.Schema(
     },
     paymentStatus: {
       type: String,
-      enum: [
-        "pending",
-        "paid",
-        "failed",
-        "processing",
-        "cod",
-        "pendingRefund",
-        "doneRefund",
-      ],
+      enum: ["pending", "paid", "failed", "processing", "cod", "pendingRefund", "doneRefund"],
       default: "pending",
     },
     transactionid: { type: String }, // Mã giao dịch ZaloPay
@@ -153,6 +146,7 @@ OrderSchema.pre("save", async function (next) {
 
   next();
 });
+
 
 // Kiểm tra model đã tồn tại chưa, tránh overwrite model
 const Order = mongoose.models.Order || mongoose.model("Order", OrderSchema);

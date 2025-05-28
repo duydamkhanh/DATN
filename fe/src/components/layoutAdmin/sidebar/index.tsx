@@ -66,13 +66,18 @@ const menuUser: MenuItem[] = [
     icon: <User />,
     href: '/dashboard/users',
   },
+
+];
+const menuGuest: MenuItem[] = [
   {
     id: 1,
     name: 'Khách hàng',
     icon: <Users />,
     href: '/dashboard/users/client',
   },
+
 ];
+
 const menuRevenue: MenuItem[] = [
   {
     id: 1,
@@ -189,6 +194,22 @@ const Sidebar = () => {
           </header>
           <div>
             {menuUser.map(item => (
+              <ItemSidebar
+                key={item.id}
+                href={item.href}
+                id={item.id}
+                name={item.name}
+                icon={item.icon}
+              />
+            ))}
+          </div>
+        </section>
+        <section className="space-y-1">
+          <header className="py-1.5 pl-2 text-xs font-medium text-ui-fg-muted">
+            Khách Hàng
+          </header>
+          <div>
+            {menuGuest.map(item => (
               <ItemSidebar
                 key={item.id}
                 href={item.href}

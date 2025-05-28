@@ -24,7 +24,7 @@ const Footer = () => {
                 Tòa nhà FPT Polytechnic, Phố Trịnh Văn Bô, Nam Từ Liêm, Hà Nội
               </p>
               <p className="m-0">
-                <strong className="fw-medium">sale@fashionzone.com</strong>
+                <strong className="fw-medium">sale@Baya.com</strong>
               </p>
               <p>
                 <strong className="fw-medium">0345952821</strong>
@@ -270,7 +270,7 @@ const Footer = () => {
         <div className="footer-bottom container">
           <div className="d-block d-md-flex align-items-center">
             <span className="footer-copyright me-auto">
-              ©2025 Fashion Zone
+              ©2025 Baya
             </span>
             <div className="footer-settings d-block d-md-flex align-items-center">
               <div className="d-flex align-items-center">

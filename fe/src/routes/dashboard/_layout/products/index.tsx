@@ -244,16 +244,7 @@ function ProductList() {
                             Xóa
                           </span>
                         </DropdownMenu.Item>
-                        <DropdownMenu.Item
-                          className="gap-x-2"
-                          onClick={() =>
-                            void navigate({
-                              to: `/dashboard/comment/${product._id}/comment`,
-                            })
-                          }
-                        >
-                          Xem bình luận
-                        </DropdownMenu.Item>
+
                         <DropdownMenu.Item
                           className="gap-x-2"
                           onClick={() =>
