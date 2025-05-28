@@ -3,7 +3,15 @@ import NewHeader from '@/components/layoutAdmin/header/new-header';
 import TextareaDescription from '@/components/textarea';
 import useProductMutation from '@/data/products/useProductMutation';
 import { ArrowDownTray, PlusMini, Trash, XMark } from '@medusajs/icons';
-import { Button, Input, Select, Textarea, toast } from '@medusajs/ui';
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  Switch,
+  Textarea,
+  toast,
+} from '@medusajs/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import axios from 'axios';
 import { useRef, useState } from 'react';
@@ -45,6 +53,9 @@ function AddProduct() {
     description: string;
     detaildescription: string;
     totalCountInStock: number;
+    countInStock: number;
+    weight: string;
+    hasVariants: boolean;
     variants: Variant[];
   }>({
     defaultValues: {
@@ -138,6 +149,9 @@ function AddProduct() {
     gallery?: string[];
     description: string;
     totalCountInStock: number;
+    countInStock: number;
+    weight: string;
+    hasVariants: boolean;
     variants: Variant[];
   }> = async data => {
     // Kiểm tra trùng size và color
@@ -233,7 +247,7 @@ function AddProduct() {
   console.log('selectedGallery', selectedGallery);
 
   return (
-    <div className="h-screen overflow-y-auto">
+    <div className="h-screen overflow-auto scrollbar-hide">
       {Loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="flex items-center justify-center space-x-2 rounded-lg bg-white p-6 py-4 shadow-lg">
@@ -369,10 +383,7 @@ function AddProduct() {
                   step="0.01"
                   placeholder="e.g., 199.99"
                   size="base"
-                  {...register('originalPrice', {
-                    required: 'Giá cũ phải bắt buộc',
-                    min: { value: 0, message: 'Giá không được nhỏ hơn 0' },
-                  })}
+                  {...register('originalPrice')}
                 />
                 {errors.originalPrice && (
                   <span className="text-xs text-red-500">
@@ -393,10 +404,7 @@ function AddProduct() {
                   step="0.01"
                   placeholder="e.g., 199.99"
                   size="base"
-                  {...register('price', {
-                    required: 'Giá phải bắt buộc',
-                    min: { value: 0, message: 'Giá không được nhỏ hơn 0' },
-                  })}
+                  {...register('price')}
                 />
                 {errors.price && (
                   <span className="text-xs text-red-500">
@@ -522,7 +530,7 @@ function AddProduct() {
                     rules={{ required: 'Mô tả cần bắt buộc' }}
                     render={({ field: { onChange, value } }) => (
                       <TextareaDescription
-                        apiKey="03491t61serrx76t1i2kcn2dno2b45jmt28up6et6tgrb3uz"
+                        apiKey="vx5npguuuktlxhbv9tv6vvgjk1x5astnj8kznhujei9w6ech"
                         value={value}
                         onChange={(content: string) =>
                           handleEditorChange(content, onChange)
@@ -539,207 +547,289 @@ function AddProduct() {
                 </div>
               </div>
             </div>
-            {/* Variants */}
 
-            <div>
-              <h2 className="mt-5 text-lg font-medium text-ui-fg-base">
-                Biến thể
-              </h2>
-              <div className="mt-4">
-                {fields.map((item, index) => (
-                  <div key={item.id} className="mb-4 flex space-x-4">
-                    <div className="flex-1 space-y-3">
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Size
-                      </label>
-                      <Input
-                        placeholder="e.g., M"
-                        size="base"
-                        {...register(`variants.${index}.size`, {
-                          required: 'Kích thước là bắt buộc',
-                        })}
-                      />
-                      {errors.variants?.[index]?.size && (
-                        <span className="text-xs text-red-500">
-                          {errors.variants[index].size.message}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Ảnh biến
-                        thể
-                      </label>
-                      <button
-                        type="button"
-                        className="mt-2 flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-ui-border-strong"
-                        onClick={handle2Click}
-                      >
-                        <div className="flex items-center gap-2">
-                          <label
-                            htmlFor={`upload-${index}`}
-                            className="flex cursor-pointer items-center rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:border-blue-500 hover:bg-blue-50"
-                          >
-                            <ArrowDownTray className="mr-2 h-5 w-5 text-gray-500" />
-                            <span>Tải lên ảnh</span>
-                          </label>
-                          <input
-                            id={`upload-${index}`}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={e => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setValue(
-                                  `variants.${index}.imageVariant`,
-                                  file
-                                ); // Cập nhật vào form
-                              }
-                            }}
-                          />
-                          {watch(`variants.${index}.imageVariant`) && (
-                            <img
-                              src={URL.createObjectURL(
-                                watch(`variants.${index}.imageVariant`)
-                              )}
-                              alt="Preview"
-                              className="h-12 w-12 rounded-lg object-cover shadow-md"
-                            />
-                          )}
-                        </div>
-                      </button>
-                      <div className="mt-5">
-                        {selectedVariant && (
-                          <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-ui-bg-subtle-hover px-2 py-3">
-                            <div>
-                              <p className="text-sm font-normal text-ui-fg-base">
-                                <img
-                                  src={URL.createObjectURL(selectedVariant)}
-                                  alt="Ảnh sản phẩm"
-                                  className="h-10 w-10 rounded-lg object-cover"
-                                />
-                              </p>
-                              <p className="text-xs font-normal text-ui-fg-subtle">
-                                {formatFileSize(selectedVariant.size)},{' '}
-                                {selectedVariant.name}
-                              </p>
-                            </div>
-                            <XMark
-                              className="cursor-pointer"
-                              onClick={() => setSelectedVariant(null)}
-                            />
-                          </div>
+            <div className="flex items-center gap-x-2">
+              <Switch
+                id="manage-inventory"
+                checked={watch('hasVariants')}
+                onCheckedChange={checked => setValue('hasVariants', checked)}
+              />
+              <Label htmlFor="manage-inventory">Sản Phẩm có biến thể</Label>
+            </div>
+
+            {/* Variants */}
+            {watch('hasVariants') && (
+              <div>
+                <h2 className="mt-5 text-lg font-medium text-ui-fg-base">
+                  Biến thể
+                </h2>
+                <div className="mt-4">
+                  {fields.map((item, index) => (
+                    <div key={item.id} className="mb-4 flex space-x-4">
+                      <div className="flex-1 space-y-3">
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Size
+                        </label>
+                        <Input
+                          placeholder="e.g., M"
+                          size="base"
+                          {...register(`variants.${index}.size` as const, {
+                            required: 'Kích thước là bắt buộc',
+                            validate: value => {
+                              const variants = watch('variants');
+                              const isDuplicate = variants.some(
+                                (variant, i) =>
+                                  i !== index &&
+                                  variant.color.trim().toLowerCase() ===
+                                    value.trim().toLowerCase() &&
+                                  variant.size.trim().toLowerCase() ===
+                                    variants[index].size.trim().toLowerCase()
+                              );
+                              return isDuplicate
+                                ? 'Kích thước đã tồn tại.'
+                                : true;
+                            },
+                          })}
+                        />
+                        {errors.variants?.[index]?.size && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.variants[index].size.message}
+                          </p>
                         )}
                       </div>
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Màu
-                      </label>
-                      <Input
-                        placeholder="e.g., Red"
-                        size="base"
-                        {...register(`variants.${index}.color`, {
-                          required: 'Màu là bắt buộc',
-                        })}
-                      />
-                      {errors.variants?.[index]?.color && (
-                        <span className="text-xs text-red-500">
-                          {errors.variants[index].color.message}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Giá
-                        (VND)
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 199.99"
-                        size="base"
-                        {...register(`variants.${index}.price`, {
-                          required: 'Giá phải bắt buộc',
-                          min: { value: 0, message: 'Giá phải lớn hơn 0' },
-                        })}
-                      />
-                      {errors.variants?.[index]?.price && (
-                        <span className="text-xs text-red-500">
-                          {errors.variants[index].price.message}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Số lượng
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 100"
-                        size="base"
-                        {...register(`variants.${index}.countInStock`, {
-                          required: 'Số lượng trong kho là bắt buộc',
-                          min: { value: 0, message: 'Số lượng phải lớn hơn 0' },
-                        })}
-                      />
-                      {errors.variants?.[index]?.countInStock && (
-                        <span className="text-xs text-red-500">
-                          {errors.variants[index].countInStock.message}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <label className="text-sm font-medium text-ui-fg-base">
-                        <span className="text-ui-tag-red-text">*</span> Khối
-                        lượng
-                      </label>
-                      <Input
-                        type="number"
-                        placeholder="e.g., 100"
-                        size="base"
-                        {...register(`variants.${index}.weight` as const, {
-                          required: 'Khối lượng cần bắt buộc',
-                          min: {
-                            value: 0,
-                            message: 'weight must be positive',
-                          },
-                        })}
-                      />
-                      {errors.variants?.[index]?.countInStock && (
-                        <span className="text-xs text-red-500">
-                          {errors.variants[index].countInStock.message}
-                        </span>
-                      )}
-                    </div>
-                    <Trash
-                      className="mt-9 cursor-pointer text-red-500"
-                      onClick={() => remove(index)}
-                    />
-                  </div>
-                ))}
+                      <div className="flex-1 space-y-3">
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Màu
+                        </label>
+                        <Input
+                          placeholder="e.g., Red"
+                          size="base"
+                          {...register(`variants.${index}.color` as const, {
+                            required: 'Màu là bắt buộc',
+                            validate: value => {
+                              const isEnglish = /^[a-zA-Z\s]+$/.test(
+                                value.trim()
+                              );
+                              if (!isEnglish) {
+                                return 'Màu sắc phải nhập bằng tiếng Anh';
+                              }
 
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    const currentVariants = watch('variants') || [];
-                    setValue('variants', [
-                      ...currentVariants,
-                      {
+                              const variants = watch('variants');
+                              const isDuplicate = variants.some(
+                                (variant, i) =>
+                                  i !== index &&
+                                  variant.color.trim().toLowerCase() ===
+                                    value.trim().toLowerCase() &&
+                                  variant.size.trim().toLowerCase() ===
+                                    variants[index].size.trim().toLowerCase()
+                              );
+                              return isDuplicate ? 'Màu sắc đã tồn tại.' : true;
+                            },
+                          })}
+                        />
+                        {errors.variants?.[index]?.color && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.variants[index].color.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Ảnh
+                          biến thể
+                        </label>
+                        <button
+                          type="button"
+                          className="mt-2 flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-ui-border-strong"
+                          onClick={handle2Click}
+                        >
+                          <div className="flex items-center gap-2">
+                            <label
+                              htmlFor={`upload-${index}`}
+                              className="flex cursor-pointer items-center rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:border-blue-500 hover:bg-blue-50"
+                            >
+                              <ArrowDownTray className="mr-2 h-5 w-5 text-gray-500" />
+                              <span>Tải lên ảnh</span>
+                            </label>
+                            <input
+                              id={`upload-${index}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={e => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setValue(
+                                    `variants.${index}.imageVariant`,
+                                    file
+                                  ); // Cập nhật vào form
+                                }
+                              }}
+                            />
+                            {watch(`variants.${index}.imageVariant`) && (
+                              <img
+                                src={URL.createObjectURL(
+                                  watch(`variants.${index}.imageVariant`)
+                                )}
+                                alt="Preview"
+                                className="h-12 w-12 rounded-lg object-cover shadow-md"
+                              />
+                            )}
+                          </div>
+                        </button>
+                        <div className="mt-5">
+                          {selectedVariant && (
+                            <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border bg-ui-bg-subtle-hover px-2 py-3">
+                              <div>
+                                <p className="text-sm font-normal text-ui-fg-base">
+                                  <img
+                                    src={URL.createObjectURL(selectedVariant)}
+                                    alt="Ảnh sản phẩm"
+                                    className="h-10 w-10 rounded-lg object-cover"
+                                  />
+                                </p>
+                                <p className="text-xs font-normal text-ui-fg-subtle">
+                                  {formatFileSize(selectedVariant.size)},{' '}
+                                  {selectedVariant.name}
+                                </p>
+                              </div>
+                              <XMark
+                                className="cursor-pointer"
+                                onClick={() => setSelectedVariant(null)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Giá
+                          (VND)
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 199.99"
+                          size="base"
+                          {...register(`variants.${index}.price` as const, {
+                            required: 'Giá phải bắt buộc',
+                            min: { value: 0, message: 'Giá phải lớn hơn 0' },
+                          })}
+                        />
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Số
+                          lượng trong kho
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 100"
+                          size="base"
+                          {...register(
+                            `variants.${index}.countInStock` as const,
+                            {
+                              required: 'Số lượng trong kho cần bắt buộc',
+                              min: {
+                                value: 0,
+                                message: 'Số lượng phải lớn hơn 0',
+                              },
+                            }
+                          )}
+                        />
+                        {errors.variants?.[index]?.countInStock && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.variants[index].countInStock.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <label className="text-sm font-medium text-ui-fg-base">
+                          <span className="text-ui-tag-red-text">*</span> Khối
+                          lượng
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 100"
+                          size="base"
+                          {...register(`variants.${index}.weight` as const, {
+                            required: 'Khối lượng cần bắt buộc',
+                            min: {
+                              value: 0,
+                              message: 'Khối lượng phải lớn hơn 0',
+                            },
+                          })}
+                        />
+                        {errors.variants?.[index]?.weight && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {errors.variants[index].weight.message}
+                          </p>
+                        )}
+                      </div>
+                      <Trash
+                        className="mt-9 cursor-pointer text-red-500"
+                        onClick={() => remove(index)}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      append({
                         size: '',
                         color: '',
                         price: 0,
                         countInStock: 0,
-                        weight: 0,
                         sku: '',
-                      },
-                    ]);
-                  }}
-                >
-                  <PlusMini /> Thêm biến thể
-                </Button>
+                        weight: 0, // thêm weight vào đây
+                      })
+                    }
+                  >
+                    <PlusMini /> Thêm biến thể
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Hiển thị trường Số lượng và Khối lượng khi hasVariants là false */}
+            {!watch('hasVariants') && (
+              <>
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-ui-fg-base">
+                    <span className="text-ui-tag-red-text">*</span> Số lượng
+                    trong kho
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 100"
+                    size="base"
+                    {...register('countInStock', {
+                      required: 'Số lượng trong kho cần bắt buộc',
+                      min: {
+                        value: 0,
+                        message: 'Số lượng phải lớn hơn 0',
+                      },
+                    })}
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="text-sm font-medium text-ui-fg-base">
+                    <span className="text-ui-tag-red-text">*</span> Khối lượng
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="e.g., 100"
+                    size="base"
+                    {...register('weight', {
+                      required: 'Khối lượng cần bắt buộc',
+                      min: {
+                        value: 0,
+                        message: 'Khối lượng phải lớn hơn 0',
+                      },
+                    })}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </form>

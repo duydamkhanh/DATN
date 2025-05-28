@@ -17,6 +17,7 @@ import {
 import instance from '@/api/axiosIntance';
 import TextareaDescription from '@/components/textarea';
 import NewHeader from '@/components/layoutAdmin/header/new-header';
+import useCartMutation from '@/data/cart/useCartMutation';
 
 export const Route = createFileRoute('/dashboard/_layout/products/$id/edit')({
   loader: async ({ params }: { params: RouteParams }) => {
@@ -37,6 +38,7 @@ export const Route = createFileRoute('/dashboard/_layout/products/$id/edit')({
 
 function EditProduct() {
   const navigate = useNavigate();
+  const userId = localStorage.getItem('userId');
 
   const { product, categories } = Route.useLoaderData();
 
@@ -85,11 +87,18 @@ function EditProduct() {
   const fileInput3Ref = useRef<HTMLInputElement>(null);
 
   const { editProduct } = useProductMutation();
-
+  const { deleteItemFromCart } = useCartMutation();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variants',
   });
+
+  const handleDeleteFormCart = async (variantIds: string[]) => {
+    await deleteItemFromCart.mutateAsync({
+      userId: String(userId),
+      variantIds: variantIds,
+    });
+  };
 
   const getImagePreview = imageVariant => {
     if (!imageVariant) return ''; // Nếu không có ảnh, trả về chuỗi rỗng
@@ -830,7 +839,10 @@ function EditProduct() {
                     </div>
                     <Trash
                       className="mt-24 cursor-pointer text-red-500"
-                      onClick={() => remove(index)}
+                      onClick={() => {
+                        remove(index);
+                        handleDeleteFormCart([item.sku]);
+                      }}
                     />
                   </div>
                 ))}
