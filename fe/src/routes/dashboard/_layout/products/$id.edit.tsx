@@ -87,17 +87,14 @@ function EditProduct() {
   const fileInput3Ref = useRef<HTMLInputElement>(null);
 
   const { editProduct } = useProductMutation();
-  const { deleteItemFromCart } = useCartMutation();
+  const { removeVariantFromAllCarts } = useCartMutation();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'variants',
   });
 
   const handleDeleteFormCart = async (variantIds: string[]) => {
-    await deleteItemFromCart.mutateAsync({
-      userId: String(userId),
-      variantIds: variantIds,
-    });
+    await removeVariantFromAllCarts.mutateAsync(variantIds);
   };
 
   const getImagePreview = imageVariant => {

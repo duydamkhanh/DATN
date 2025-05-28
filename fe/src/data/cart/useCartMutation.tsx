@@ -47,6 +47,22 @@ const useCartMutation = () => {
     },
   });
 
+    const removeVariantFromAllCarts = useMutation({
+    mutationFn: (variantIds: string[]) =>
+      instance.delete('/remove-variants', {
+        data: { variantIds },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onError: (error: any) => {
+      toast.error(`Có lỗi xảy ra: ${error.message}`, {
+        description: 'Không thể xóa sản phẩm khỏi giỏ hàng, vui lòng thử lại.',
+        duration: 2000,
+      });
+    },
+  });
+
   const updateQuantity = useMutation({
     mutationFn: (data: {
       userId: string;
@@ -125,6 +141,7 @@ const useCartMutation = () => {
     updateQuantity,
     increaseQuantity,
     decreaseQuantity,
+    removeVariantFromAllCarts,
   };
 };
 
